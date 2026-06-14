@@ -1,0 +1,14 @@
+# clasp
+.clasp.json
+.clasprc.json
+
+# node / tooling
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# local sample uploads
+*.xlsx

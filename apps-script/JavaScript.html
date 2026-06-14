@@ -1,0 +1,462 @@
+<script>
+/**
+ * JavaScript.html — front-end controller for the Members CMS.
+ * Talks to the .gs backend via google.script.run (wrapped in promises).
+ */
+var App = (function () {
+  // ---- shared state ----
+  var state = {
+    config: { statuses: [], genders: [], serviceTypes: [] },
+    members: [],
+    years: [],
+    serviceDates: [],
+    roster: [],          // current record-attendance roster
+    rosterDate: null,
+    rosterType: null,
+    chartReady: false
+  };
+
+  // ---- server bridge (promise wrapper around google.script.run) ----
+  function call(fn, args) {
+    return new Promise(function (resolve, reject) {
+      if (!(window.google && google.script && google.script.run)) {
+        return reject(new Error('google.script.run unavailable (open via the Sheets menu or web app).'));
+      }
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(reject)
+        .__dispatch(fn, args || []);
+    });
+  }
+  // We dispatch by name through a single server entry to keep this generic.
+  // (Defined in Bridge.gs.)
+
+  // ---- ui helpers ----
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+  function initials(name) {
+    var p = String(name || '?').trim().split(/\s+/);
+    var a = (p[0] || '')[0] || '';
+    var b = (p[1] || '')[0] || '';
+    return (a + b).toUpperCase() || '?';
+  }
+  function showLoader(on) { $('loader').classList.toggle('hidden', !on); }
+  var toastTimer;
+  function toast(msg, kind) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (kind || '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.className = 'toast ' + (kind || ''); }, 3000);
+  }
+  function statusChip(s) {
+    var cls = s === 'Active' ? 'active' : (s === 'Visitor' ? 'visitor' : 'inactive');
+    return '<span class="chip ' + cls + '">' + esc(s || '—') + '</span>';
+  }
+  function todayKey() {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+
+  // ---- navigation ----
+  function go(view) {
+    document.querySelectorAll('.nav-item').forEach(function (n) {
+      n.classList.toggle('active', n.dataset.view === view);
+    });
+    document.querySelectorAll('.view').forEach(function (v) { v.classList.add('hidden'); });
+    $('view-' + view).classList.remove('hidden');
+    if (view === 'trends') ensureChartLib().then(loadChart);
+  }
+
+  // ================= BOOTSTRAP =================
+  function init() {
+    document.querySelectorAll('.nav-item').forEach(function (n) {
+      n.addEventListener('click', function () { go(n.dataset.view); });
+    });
+    // default dates
+    $('recDate').value = todayKey();
+    $('repDate').value = todayKey();
+    reloadAll();
+  }
+
+  function reloadAll() {
+    showLoader(true);
+    call('getBootstrap').then(function (b) {
+      state.config = b.config;
+      state.members = b.members;
+      state.years = b.years;
+      state.serviceDates = b.serviceDates;
+      fillStaticSelects();
+      renderDashboard(b.stats);
+      renderMembers();
+      fillMemberSelect();
+      fillYearSelects();
+      showLoader(false);
+    }).catch(function (e) { showLoader(false); toast(e.message, 'err'); });
+  }
+
+  function fillStaticSelects() {
+    var types = state.config.serviceTypes || [];
+    var typeOpts = types.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('');
+    $('recType').innerHTML = typeOpts;
+    $('repType').innerHTML = '<option value="">All types</option>' + typeOpts;
+    $('trendType').innerHTML = '<option value="">All types</option>' + typeOpts;
+    $('mGender').innerHTML = '<option value=""></option>' +
+      (state.config.genders || []).map(function (g) { return '<option>' + esc(g) + '</option>'; }).join('');
+    $('mStatus').innerHTML = (state.config.statuses || [])
+      .map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('');
+  }
+
+  function fillYearSelects() {
+    var opts = (state.years || []).map(function (y) { return '<option>' + esc(y) + '</option>'; }).join('');
+    $('trendYear').innerHTML = opts;
+    $('histYear').innerHTML = '<option value="">Any</option>' + opts;
+  }
+
+  // ================= DASHBOARD =================
+  function renderDashboard(stats) {
+    var cards = [
+      { num: stats.totalMembers, lbl: 'Total members' },
+      { num: stats.activeMembers, lbl: 'Active members' },
+      { num: stats.totalServices, lbl: 'Services recorded' },
+      { num: stats.avgRecentAttendance, lbl: 'Avg. recent attendance' },
+      { num: stats.totalRecords, lbl: 'Attendance records' }
+    ];
+    $('statCards').innerHTML = cards.map(function (c) {
+      return '<div class="stat-card"><div class="num">' + esc(c.num) +
+        '</div><div class="lbl">' + esc(c.lbl) + '</div></div>';
+    }).join('');
+
+    var sd = state.serviceDates || [];
+    if (!sd.length) {
+      $('recentServices').innerHTML = '<div class="empty">No services recorded yet. Go to “Record Attendance”.</div>';
+      return;
+    }
+    var rows = sd.slice(0, 12).map(function (s) {
+      var types = Object.keys(s.types || {}).map(function (k) {
+        return esc(k) + ' (' + s.types[k] + ')';
+      }).join(', ');
+      return '<tr><td class="nowrap">' + esc(s.date) + '</td><td><span class="badge badge-green">' +
+        s.count + '</span></td><td>' + types + '</td>' +
+        '<td><button class="link-btn" onclick="App.gotoReport(\'' + s.date + '\')">View report →</button></td></tr>';
+    }).join('');
+    $('recentServices').innerHTML =
+      '<table><thead><tr><th>Date</th><th>Present</th><th>Service types</th><th></th></tr></thead><tbody>' +
+      rows + '</tbody></table>';
+  }
+
+  function gotoReport(date) {
+    go('report');
+    $('repDate').value = date;
+    $('repType').value = '';
+    loadReport();
+  }
+
+  // ================= MEMBERS =================
+  function renderMembers() {
+    var q = ($('memberSearch').value || '').toLowerCase().trim();
+    var list = state.members.filter(function (m) {
+      if (!q) return true;
+      return [m.name, m.contact, m.residence].join(' ').toLowerCase().indexOf(q) !== -1;
+    });
+    if (!list.length) {
+      $('membersTable').innerHTML = '<div class="empty">No members found.</div>';
+      return;
+    }
+    var rows = list.map(function (m) {
+      return '<tr>' +
+        '<td><b>' + esc(m.name) + '</b></td>' +
+        '<td>' + esc(m.contact) + '</td>' +
+        '<td>' + esc(m.residence) + '</td>' +
+        '<td>' + esc(m.gender) + '</td>' +
+        '<td>' + statusChip(m.status) + '</td>' +
+        '<td>' + esc(m.dateJoined) + '</td>' +
+        '<td><button class="link-btn" onclick="App.openMemberForm(\'' + esc(m.id) + '\')">Edit</button></td>' +
+        '</tr>';
+    }).join('');
+    $('membersTable').innerHTML =
+      '<table><thead><tr><th>Name</th><th>Contact</th><th>Residence</th><th>Gender</th>' +
+      '<th>Status</th><th>Joined</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  function openMemberForm(id) {
+    var m = id ? state.members.filter(function (x) { return x.id === id; })[0] : null;
+    $('memberModalTitle').textContent = m ? 'Edit Member' : 'Add Member';
+    $('mId').value = m ? m.id : '';
+    $('mName').value = m ? m.name : '';
+    $('mContact').value = m ? m.contact : '';
+    $('mResidence').value = m ? m.residence : '';
+    $('mGender').value = m ? (m.gender || '') : '';
+    $('mStatus').value = m ? (m.status || 'Active') : 'Active';
+    $('mJoined').value = m ? (m.dateJoined || todayKey()) : todayKey();
+    $('mNotes').value = m ? (m.notes || '') : '';
+    $('memberModal').classList.remove('hidden');
+    $('mName').focus();
+  }
+  function closeMemberForm() { $('memberModal').classList.add('hidden'); }
+
+  function saveMember() {
+    var data = {
+      id: $('mId').value,
+      name: $('mName').value.trim(),
+      contact: $('mContact').value.trim(),
+      residence: $('mResidence').value.trim(),
+      gender: $('mGender').value,
+      status: $('mStatus').value,
+      dateJoined: $('mJoined').value,
+      notes: $('mNotes').value.trim()
+    };
+    if (!data.name) { toast('Name is required', 'err'); return; }
+    $('mSaveBtn').disabled = true;
+    var fn = data.id ? 'updateMember' : 'addMember';
+    call(fn, [data]).then(function () {
+      $('mSaveBtn').disabled = false;
+      closeMemberForm();
+      toast(data.id ? 'Member updated' : 'Member added', 'ok');
+      reloadAll();
+    }).catch(function (e) { $('mSaveBtn').disabled = false; toast(e.message, 'err'); });
+  }
+
+  function fillMemberSelect() {
+    var opts = state.members.map(function (m) {
+      return '<option value="' + esc(m.id) + '">' + esc(m.name) + '</option>';
+    }).join('');
+    $('histMember').innerHTML = opts || '<option value="">(no members)</option>';
+  }
+
+  // ================= RECORD ATTENDANCE =================
+  function loadRoster() {
+    var date = $('recDate').value;
+    if (!date) { toast('Pick a service date', 'err'); return; }
+    var type = $('recType').value;
+    showLoader(true);
+    call('getRosterForDate', [date, type]).then(function (res) {
+      state.roster = res.roster;
+      state.rosterDate = res.date;
+      state.rosterType = type;
+      renderRoster();
+      $('rosterPanel').classList.remove('hidden');
+      showLoader(false);
+    }).catch(function (e) { showLoader(false); toast(e.message, 'err'); });
+  }
+
+  function renderRoster() {
+    var q = ($('rosterSearch').value || '').toLowerCase().trim();
+    var html = state.roster.map(function (m, i) {
+      var show = !q || [m.name, m.residence, m.contact].join(' ').toLowerCase().indexOf(q) !== -1;
+      return '<label class="roster-item ' + (m.present ? 'present' : '') + '"' +
+        (show ? '' : ' style="display:none"') + ' data-i="' + i + '">' +
+        '<input type="checkbox" ' + (m.present ? 'checked' : '') +
+        ' onchange="App.toggleRoster(' + i + ', this.checked)">' +
+        '<span><span class="ri-name">' + esc(m.name) + '</span><br>' +
+        '<span class="ri-sub">' + esc(m.residence || '—') + '</span></span></label>';
+    }).join('');
+    $('rosterList').innerHTML = html || '<div class="empty">No members yet. Add members first.</div>';
+    updateRosterCount();
+  }
+  function toggleRoster(i, checked) {
+    state.roster[i].present = checked;
+    var el = document.querySelector('.roster-item[data-i="' + i + '"]');
+    if (el) el.classList.toggle('present', checked);
+    updateRosterCount();
+  }
+  function filterRoster() { renderRoster(); }
+  function markAll(val) {
+    var q = ($('rosterSearch').value || '').toLowerCase().trim();
+    state.roster.forEach(function (m) {
+      var show = !q || [m.name, m.residence, m.contact].join(' ').toLowerCase().indexOf(q) !== -1;
+      if (show) m.present = val;
+    });
+    renderRoster();
+  }
+  function updateRosterCount() {
+    var n = state.roster.filter(function (m) { return m.present; }).length;
+    $('rosterPresentCount').textContent = n;
+  }
+
+  function saveRoster() {
+    var ids = state.roster.filter(function (m) { return m.present; }).map(function (m) { return m.id; });
+    showLoader(true);
+    call('saveAttendanceForDate', [state.rosterDate, state.rosterType, ids]).then(function (r) {
+      showLoader(false);
+      toast('Saved: ' + r.present + ' present (+' + r.added + ' / -' + r.removed + ')', 'ok');
+      // refresh service list cheaply
+      call('getServiceDates').then(function (sd) { state.serviceDates = sd; });
+    }).catch(function (e) { showLoader(false); toast(e.message, 'err'); });
+  }
+
+  function deleteService() {
+    if (!confirm('Delete ALL attendance records for ' + state.rosterDate +
+      ' (' + state.rosterType + ')? This cannot be undone.')) return;
+    showLoader(true);
+    call('deleteServiceAttendance', [state.rosterDate, state.rosterType]).then(function (r) {
+      showLoader(false);
+      toast('Deleted ' + r.removed + ' records', 'ok');
+      state.roster.forEach(function (m) { m.present = false; });
+      renderRoster();
+      call('getServiceDates').then(function (sd) { state.serviceDates = sd; });
+    }).catch(function (e) { showLoader(false); toast(e.message, 'err'); });
+  }
+
+  // ================= SERVICE REPORT =================
+  function loadReport() {
+    var date = $('repDate').value;
+    if (!date) { toast('Pick a date', 'err'); return; }
+    var type = $('repType').value;
+    showLoader(true);
+    call('getDateSummary', [date, type]).then(function (s) {
+      renderReport(s);
+      showLoader(false);
+    }).catch(function (e) { showLoader(false); toast(e.message, 'err'); });
+  }
+
+  function renderReport(s) {
+    var presentW = s.totalConsidered ? (s.presentCount / s.totalConsidered * 100) : 0;
+    $('reportSummary').innerHTML =
+      '<div class="summary-bar">' +
+        pill(s.presentCount, 'Present', 'var(--green)') +
+        pill(s.absentCount, 'Absent', 'var(--red)') +
+        pill(s.presentPct + '%', 'Present rate', 'var(--blue)') +
+        pill(s.totalConsidered, 'Members considered', 'var(--muted)') +
+      '</div>' +
+      '<div class="panel"><div class="muted" style="margin-bottom:6px">' + esc(s.date) +
+        (s.serviceType ? ' · ' + esc(s.serviceType) : ' · all services') + '</div>' +
+        '<div class="progress"><div class="seg-present" style="width:' + presentW + '%"></div>' +
+        '<div class="seg-absent" style="width:' + (100 - presentW) + '%"></div></div></div>';
+
+    $('presentBadge').textContent = s.presentCount;
+    $('absentBadge').textContent = s.absentCount;
+    $('presentList').innerHTML = peopleList(s.present, 'No one recorded present.');
+    $('absentList').innerHTML = peopleList(s.absent, 'No absentees 🎉');
+  }
+  function pill(num, lbl, color) {
+    return '<div class="summary-pill"><div class="sp-num" style="color:' + color + '">' +
+      esc(num) + '</div><div class="sp-lbl">' + esc(lbl) + '</div></div>';
+  }
+  function peopleList(arr, emptyMsg) {
+    if (!arr || !arr.length) return '<div class="empty">' + esc(emptyMsg) + '</div>';
+    return arr.map(function (p) {
+      return '<div class="person"><div class="avatar">' + esc(initials(p.name)) + '</div>' +
+        '<div><div class="p-name">' + esc(p.name) + '</div>' +
+        '<div class="p-sub">' + esc(p.residence || '—') +
+        (p.contact ? ' · ' + esc(p.contact) : '') + '</div></div></div>';
+    }).join('');
+  }
+
+  // ================= TRENDS (chart) =================
+  function ensureChartLib() {
+    return new Promise(function (resolve) {
+      if (state.chartReady) return resolve();
+      google.charts.load('current', { packages: ['corechart', 'bar'] });
+      google.charts.setOnLoadCallback(function () { state.chartReady = true; resolve(); });
+    });
+  }
+
+  function loadChart() {
+    var year = $('trendYear').value || new Date().getFullYear();
+    var month = $('trendMonth').value || null;
+    var type = $('trendType').value || null;
+    showLoader(true);
+    call('getYearlyChart', [year, month ? Number(month) : null, type]).then(function (d) {
+      showLoader(false);
+      drawChart(d);
+    }).catch(function (e) { showLoader(false); toast(e.message, 'err'); });
+  }
+
+  function drawChart(d) {
+    var hasData = d.rows.some(function (r) { return r.count > 0; });
+    $('chartEmpty').classList.toggle('hidden', hasData);
+    $('chart').classList.toggle('hidden', !hasData);
+    if (!hasData) return;
+
+    ensureChartLib().then(function () {
+      var dt = new google.visualization.DataTable();
+      dt.addColumn('string', d.mode === 'day' ? 'Service date' : 'Month');
+      dt.addColumn('number', 'Present');
+      dt.addColumn({ type: 'string', role: 'annotation' });
+      d.rows.forEach(function (r) { dt.addRow([r.label, r.count, String(r.count)]); });
+
+      var title = d.mode === 'day'
+        ? 'Present count — ' + monthName(d.month) + ' ' + d.year
+        : 'Present count by month — ' + d.year;
+      var chart = new google.visualization.ColumnChart($('chart'));
+      chart.draw(dt, {
+        title: title,
+        titleTextStyle: { fontSize: 16 },
+        legend: { position: 'none' },
+        colors: ['#1a73e8'],
+        bar: { groupWidth: '62%' },
+        hAxis: { slantedText: d.mode === 'day', slantedTextAngle: 40 },
+        vAxis: { minValue: 0, title: 'People present' },
+        chartArea: { width: '88%', height: '72%' },
+        annotations: { alwaysOutside: true, textStyle: { fontSize: 11, color: '#444' } }
+      });
+    });
+  }
+  function monthName(m) {
+    return ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July',
+      'August', 'September', 'October', 'November', 'December'][m] || '';
+  }
+
+  // ================= MEMBER HISTORY =================
+  function loadHistory() {
+    var id = $('histMember').value;
+    if (!id) { toast('Pick a member', 'err'); return; }
+    var year = $('histYear').value || null;
+    var month = $('histMonth').value ? Number($('histMonth').value) : null;
+    var day = $('histDay').value || null;
+    showLoader(true);
+    call('getMemberHistory', [id, year, month, day]).then(function (h) {
+      showLoader(false);
+      renderHistory(h);
+    }).catch(function (e) { showLoader(false); toast(e.message, 'err'); });
+  }
+  function clearHistoryFilters() {
+    $('histYear').value = '';
+    $('histMonth').value = '';
+    $('histDay').value = '';
+  }
+
+  function renderHistory(h) {
+    var m = h.member;
+    var head = '<div class="panel"><div style="display:flex;gap:14px;align-items:center">' +
+      '<div class="avatar" style="width:46px;height:46px;font-size:16px">' + esc(initials(m.name)) + '</div>' +
+      '<div><h2>' + esc(m.name) + '</h2><div class="muted">' + esc(m.residence || '—') +
+      (m.contact ? ' · ' + esc(m.contact) : '') + '</div></div>' +
+      '<div style="margin-left:auto;text-align:right">' +
+      '<div><span class="badge badge-blue">' + h.matched + '</span> matching</div>' +
+      '<div class="muted" style="margin-top:4px">' + h.totalAllTime + ' all-time</div></div>' +
+      '</div></div>';
+
+    var body;
+    if (!h.services.length) {
+      body = '<div class="panel"><div class="empty">No services found for this filter.</div></div>';
+    } else {
+      var rows = h.services.map(function (s) {
+        return '<tr><td class="nowrap">' + esc(s.date) + '</td><td>' + esc(s.serviceType) + '</td>' +
+          '<td><button class="link-btn" onclick="App.gotoReport(\'' + s.date + '\')">View service →</button></td></tr>';
+      }).join('');
+      body = '<div class="panel table-wrap"><table><thead><tr><th>Date</th><th>Service</th><th></th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table></div>';
+    }
+    $('historyResult').innerHTML = head + body;
+  }
+
+  // ---- public API ----
+  return {
+    init: init, reloadAll: reloadAll, go: go,
+    renderMembers: renderMembers, openMemberForm: openMemberForm,
+    closeMemberForm: closeMemberForm, saveMember: saveMember,
+    loadRoster: loadRoster, toggleRoster: toggleRoster, filterRoster: filterRoster,
+    markAll: markAll, saveRoster: saveRoster, deleteService: deleteService,
+    loadReport: loadReport, gotoReport: gotoReport,
+    loadChart: loadChart, loadHistory: loadHistory, clearHistoryFilters: clearHistoryFilters
+  };
+})();
+
+window.addEventListener('DOMContentLoaded', App.init);
+</script>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <?!= include('Stylesheet'); ?>
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">FLCPC</div>
+        <div class="brand-sub">Members CMS</div>
+      </div>
+      <nav>
+        <a class="nav-item active" data-view="dashboard">📊 Dashboard</a>
+        <a class="nav-item" data-view="members">👥 Members</a>
+        <a class="nav-item" data-view="record">✅ Record Attendance</a>
+        <a class="nav-item" data-view="report">📅 Service Report</a>
+        <a class="nav-item" data-view="trends">📈 Trends</a>
+        <a class="nav-item" data-view="history">🔎 Member History</a>
+      </nav>
+      <div class="sidebar-foot">
+        <button class="btn btn-ghost btn-sm" onclick="App.reloadAll()">↻ Refresh data</button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content">
+      <div id="toast" class="toast"></div>
+      <div id="loader" class="loader hidden"><div class="spinner"></div></div>
+
+      <!-- DASHBOARD -->
+      <section class="view" id="view-dashboard">
+        <h1>Dashboard</h1>
+        <div class="cards" id="statCards"></div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Recent services</h2>
+          </div>
+          <div id="recentServices" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- MEMBERS -->
+      <section class="view hidden" id="view-members">
+        <div class="view-head">
+          <h1>Members</h1>
+          <div class="view-actions">
+            <input id="memberSearch" class="input" placeholder="Search name / contact / residence…" oninput="App.renderMembers()">
+            <button class="btn btn-primary" onclick="App.openMemberForm()">＋ Add Member</button>
+          </div>
+        </div>
+        <div id="membersTable" class="table-wrap"></div>
+      </section>
+
+      <!-- RECORD ATTENDANCE -->
+      <section class="view hidden" id="view-record">
+        <h1>Record Attendance</h1>
+        <div class="panel">
+          <div class="record-controls">
+            <label>Service date
+              <input type="date" id="recDate" class="input">
+            </label>
+            <label>Service type
+              <select id="recType" class="input"></select>
+            </label>
+            <button class="btn btn-secondary" onclick="App.loadRoster()">Load roster</button>
+          </div>
+        </div>
+
+        <div id="rosterPanel" class="panel hidden">
+          <div class="roster-toolbar">
+            <input id="rosterSearch" class="input" placeholder="Filter members…" oninput="App.filterRoster()">
+            <div class="roster-bulk">
+              <button class="btn btn-ghost btn-sm" onclick="App.markAll(true)">Select all present</button>
+              <button class="btn btn-ghost btn-sm" onclick="App.markAll(false)">Clear all</button>
+            </div>
+            <div class="roster-count"><span id="rosterPresentCount">0</span> present</div>
+          </div>
+          <div id="rosterList" class="roster-list"></div>
+          <div class="roster-foot">
+            <button class="btn btn-primary btn-lg" onclick="App.saveRoster()">💾 Save attendance</button>
+            <button class="btn btn-danger-ghost" onclick="App.deleteService()">🗑 Delete this service's records</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SERVICE REPORT -->
+      <section class="view hidden" id="view-report">
+        <h1>Service Report</h1>
+        <div class="panel">
+          <div class="record-controls">
+            <label>Service date
+              <input type="date" id="repDate" class="input">
+            </label>
+            <label>Service type
+              <select id="repType" class="input"><option value="">All types</option></select>
+            </label>
+            <button class="btn btn-secondary" onclick="App.loadReport()">Show report</button>
+          </div>
+        </div>
+        <div id="reportSummary"></div>
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-head"><h2>✅ Present <span id="presentBadge" class="badge badge-green">0</span></h2></div>
+            <div id="presentList" class="people-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>❌ Absent <span id="absentBadge" class="badge badge-red">0</span></h2></div>
+            <div id="absentList" class="people-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TRENDS -->
+      <section class="view hidden" id="view-trends">
+        <h1>Attendance Trends</h1>
+        <div class="panel">
+          <div class="record-controls">
+            <label>Year
+              <select id="trendYear" class="input"></select>
+            </label>
+            <label>Month
+              <select id="trendMonth" class="input">
+                <option value="">Whole year (by month)</option>
+                <option value="1">January</option><option value="2">February</option>
+                <option value="3">March</option><option value="4">April</option>
+                <option value="5">May</option><option value="6">June</option>
+                <option value="7">July</option><option value="8">August</option>
+                <option value="9">September</option><option value="10">October</option>
+                <option value="11">November</option><option value="12">December</option>
+              </select>
+            </label>
+            <label>Service type
+              <select id="trendType" class="input"><option value="">All types</option></select>
+            </label>
+            <button class="btn btn-secondary" onclick="App.loadChart()">Update chart</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div id="chart" class="chart"></div>
+          <div id="chartEmpty" class="empty hidden">No attendance data for this selection.</div>
+        </div>
+      </section>
+
+      <!-- MEMBER HISTORY -->
+      <section class="view hidden" id="view-history">
+        <h1>Member Service History</h1>
+        <div class="panel">
+          <div class="record-controls">
+            <label>Member
+              <select id="histMember" class="input"></select>
+            </label>
+            <label>Year
+              <select id="histYear" class="input"><option value="">Any</option></select>
+            </label>
+            <label>Month
+              <select id="histMonth" class="input">
+                <option value="">Any</option>
+                <option value="1">January</option><option value="2">February</option>
+                <option value="3">March</option><option value="4">April</option>
+                <option value="5">May</option><option value="6">June</option>
+                <option value="7">July</option><option value="8">August</option>
+                <option value="9">September</option><option value="10">October</option>
+                <option value="11">November</option><option value="12">December</option>
+              </select>
+            </label>
+            <label>Exact date
+              <input type="date" id="histDay" class="input">
+            </label>
+            <button class="btn btn-secondary" onclick="App.loadHistory()">Show history</button>
+            <button class="btn btn-ghost btn-sm" onclick="App.clearHistoryFilters()">Clear filters</button>
+          </div>
+        </div>
+        <div id="historyResult"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Member add/edit modal -->
+  <div id="memberModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="memberModalTitle">Add Member</h2>
+        <button class="icon-btn" onclick="App.closeMemberForm()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="mId">
+        <label>Name <span class="req">*</span>
+          <input id="mName" class="input" placeholder="Full name">
+        </label>
+        <label>Contact
+          <input id="mContact" class="input" placeholder="Phone number(s)">
+        </label>
+        <label>Residence
+          <input id="mResidence" class="input" placeholder="Area / landmark">
+        </label>
+        <div class="form-row">
+          <label>Gender
+            <select id="mGender" class="input"></select>
+          </label>
+          <label>Status
+            <select id="mStatus" class="input"></select>
+          </label>
+        </div>
+        <label>Date joined
+          <input type="date" id="mJoined" class="input">
+        </label>
+        <label>Notes
+          <textarea id="mNotes" class="input" rows="2"></textarea>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="App.closeMemberForm()">Cancel</button>
+        <button class="btn btn-primary" id="mSaveBtn" onclick="App.saveMember()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <?!= include('JavaScript'); ?>
+</body>
+</html>
