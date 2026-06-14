@@ -69,7 +69,22 @@ var App = (function () {
     });
     document.querySelectorAll('.view').forEach(function (v) { v.classList.add('hidden'); });
     $('view-' + view).classList.remove('hidden');
+    closeNav();            // collapse the mobile menu after choosing a view
+    window.scrollTo(0, 0);
     if (view === 'trends') ensureChartLib().then(loadChart);
+  }
+
+  // ---- mobile sidebar ----
+  function openNav() {
+    $('sidebar').classList.add('open');
+    $('sidebarOverlay').classList.add('show');
+  }
+  function closeNav() {
+    $('sidebar').classList.remove('open');
+    $('sidebarOverlay').classList.remove('show');
+  }
+  function toggleNav() {
+    if ($('sidebar').classList.contains('open')) closeNav(); else openNav();
   }
 
   // ================= BOOTSTRAP =================
@@ -80,6 +95,18 @@ var App = (function () {
     // default dates
     $('recDate').value = todayKey();
     $('repDate').value = todayKey();
+
+    // Redraw the chart on resize/rotation (Google Charts are not fluid).
+    var rzTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(rzTimer);
+      rzTimer = setTimeout(function () {
+        if (!$('view-trends').classList.contains('hidden') && state.lastChartData) {
+          drawChart(state.lastChartData);
+        }
+      }, 250);
+    });
+
     reloadAll();
   }
 
@@ -368,6 +395,7 @@ var App = (function () {
   }
 
   function drawChart(d) {
+    state.lastChartData = d;
     var hasData = d.rows.some(function (r) { return r.count > 0; });
     $('chartEmpty').classList.toggle('hidden', hasData);
     $('chart').classList.toggle('hidden', !hasData);
@@ -449,6 +477,7 @@ var App = (function () {
   // ---- public API ----
   return {
     init: init, reloadAll: reloadAll, go: go,
+    toggleNav: toggleNav, openNav: openNav, closeNav: closeNav,
     renderMembers: renderMembers, openMemberForm: openMemberForm,
     closeMemberForm: closeMemberForm, saveMember: saveMember,
     loadRoster: loadRoster, toggleRoster: toggleRoster, filterRoster: filterRoster,

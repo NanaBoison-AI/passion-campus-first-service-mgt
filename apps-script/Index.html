@@ -7,8 +7,11 @@
 </head>
 <body>
   <div id="app">
+    <!-- Mobile sidebar backdrop -->
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="App.closeNav()"></div>
+
     <!-- Sidebar navigation -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="brand-logo">FLCPC</div>
         <div class="brand-sub">Members CMS</div>
@@ -28,6 +31,12 @@
 
     <!-- Main content -->
     <main class="content">
+      <!-- Mobile top bar (hidden on desktop) -->
+      <header class="topbar">
+        <button class="hamburger" onclick="App.toggleNav()" aria-label="Menu">☰</button>
+        <div class="topbar-title">FLCPC · Members CMS</div>
+      </header>
+
       <div id="toast" class="toast"></div>
       <div id="loader" class="loader hidden"><div class="spinner"></div></div>
 
