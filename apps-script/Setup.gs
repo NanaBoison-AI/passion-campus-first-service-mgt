@@ -49,6 +49,15 @@ function setupSheets() {
   // Remember the spreadsheet id so the standalone web app can find it.
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
 
+  // Keep the spreadsheet timezone aligned with the app timezone (manifest)
+  // so auto timestamps (RECORDED_AT) and date formatting agree. Without this
+  // a sheet left on the US default shows "yesterday" for early-UTC saves.
+  try {
+    if (ss.getSpreadsheetTimeZone() !== CONFIG.TIMEZONE) {
+      ss.setSpreadsheetTimeZone(CONFIG.TIMEZONE);
+    }
+  } catch (e) { /* non-fatal */ }
+
   ensureSheet_(ss, CONFIG.SHEETS.MEMBERS, CONFIG.MEMBER_HEADERS);
   ensureSheet_(ss, CONFIG.SHEETS.ATTENDANCE, CONFIG.ATTENDANCE_HEADERS);
   ensureSheet_(ss, CONFIG.SHEETS.SERVICES, CONFIG.SERVICE_HEADERS);

@@ -45,17 +45,29 @@ function tz_() {
 /** Normalises any date-ish value to a 'yyyy-MM-dd' string (sheet timezone). */
 function toDateKey_(value) {
   if (value === null || value === undefined || value === '') return '';
-  var d = (value instanceof Date) ? value : new Date(value);
-  if (isNaN(d.getTime())) {
-    // Maybe it is already a yyyy-MM-dd-ish string.
-    var s = String(value).trim();
-    var m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if (m) {
-      return m[1] + '-' + pad2_(m[2]) + '-' + pad2_(m[3]);
-    }
-    return s;
+
+  // Real Date objects (e.g. read from a sheet cell) are formatted in the
+  // sheet timezone.
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? '' : Utilities.formatDate(value, tz_(), 'yyyy-MM-dd');
   }
-  return Utilities.formatDate(d, tz_(), 'yyyy-MM-dd');
+
+  // A string that already starts with yyyy-MM-dd (the HTML <input type=date>
+  // value, or a date/datetime string) is a plain calendar date — return it
+  // as-is. DO NOT run it through `new Date(...)`, which parses 'yyyy-MM-dd' as
+  // UTC midnight and then shifts the day when reformatted in a non-UTC zone.
+  var s = String(value).trim();
+  var iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    return iso[1] + '-' + pad2_(iso[2]) + '-' + pad2_(iso[3]);
+  }
+
+  // Fallback for other textual formats (e.g. "6/14/2026").
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return Utilities.formatDate(d, tz_(), 'yyyy-MM-dd');
+  }
+  return s;
 }
 
 function pad2_(n) {
