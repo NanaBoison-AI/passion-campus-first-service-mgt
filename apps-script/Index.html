@@ -159,9 +159,33 @@
       <a class="nav-item" data-view="members"><span class="ti">👥</span><span class="tl">Members</span></a>
       <a class="nav-item" data-view="record"><span class="ti">✅</span><span class="tl">Record</span></a>
       <a class="nav-item" data-view="report"><span class="ti">📅</span><span class="tl">Report</span></a>
-      <a class="nav-item" data-view="trends"><span class="ti">📈</span><span class="tl">Trends</span></a>
-      <a class="nav-item" data-view="history"><span class="ti">🔎</span><span class="tl">History</span></a>
+      <a class="nav-item nav-secondary" data-view="trends"><span class="ti">📈</span><span class="tl">Trends</span></a>
+      <a class="nav-item nav-secondary" data-view="history"><span class="ti">🔎</span><span class="tl">History</span></a>
+      <a class="nav-item nav-more" data-view="more"><span class="ti">⋯</span><span class="tl">More</span></a>
     </nav>
+  </div>
+
+  <!-- "More" menu (mobile) -->
+  <div id="moreSheet" class="sheet hidden" onclick="if(event.target===this)App.closeMore()">
+    <div class="sheet-card">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <h2>More</h2>
+        <button class="icon-btn" onclick="App.closeMore()">✕</button>
+      </div>
+      <div class="sheet-body">
+        <button class="more-item" onclick="App.goFromMore('trends')">
+          <span class="mi-ic">📈</span>
+          <span class="mi-txt"><b>Trends</b><span class="muted">Attendance bar charts by year &amp; month</span></span>
+          <span class="mi-arrow">›</span>
+        </button>
+        <button class="more-item" onclick="App.goFromMore('history')">
+          <span class="mi-ic">🔎</span>
+          <span class="mi-txt"><b>Member History</b><span class="muted">Services a person has attended</span></span>
+          <span class="mi-arrow">›</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Member add/edit bottom sheet -->

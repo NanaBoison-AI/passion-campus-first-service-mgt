@@ -71,11 +71,18 @@ var App = (function () {
   // Views whose FAB adds something (label + handler set in fabAction).
   var FAB_VIEWS = { members: '＋', record: '＋' };
 
+  // Views tucked under the mobile "More" tab.
+  var MORE_VIEWS = { trends: true, history: true };
+
   function go(view) {
     state.currentView = view;
     document.querySelectorAll('.nav-item').forEach(function (n) {
       n.classList.toggle('active', n.dataset.view === view);
     });
+    // Keep the "More" tab highlighted while on one of its views (mobile).
+    var moreEl = document.querySelector('.nav-more');
+    if (moreEl) moreEl.classList.toggle('active', !!MORE_VIEWS[view]);
+
     document.querySelectorAll('.view').forEach(function (v) { v.classList.add('hidden'); });
     $('view-' + view).classList.remove('hidden');
     $('appbarTitle').textContent = VIEW_TITLES[view] || '';
@@ -83,6 +90,11 @@ var App = (function () {
     window.scrollTo(0, 0);
     if (view === 'trends') ensureChartLib().then(loadChart);
   }
+
+  // ---- "More" menu (mobile) ----
+  function openMore() { $('moreSheet').classList.remove('hidden'); }
+  function closeMore() { $('moreSheet').classList.add('hidden'); }
+  function goFromMore(view) { closeMore(); go(view); }
 
   // ---- context FAB ----
   function updateFab(view) {
@@ -102,7 +114,10 @@ var App = (function () {
   // ================= BOOTSTRAP =================
   function init() {
     document.querySelectorAll('.nav-item').forEach(function (n) {
-      n.addEventListener('click', function () { go(n.dataset.view); });
+      n.addEventListener('click', function () {
+        if (n.dataset.view === 'more') { openMore(); return; }
+        go(n.dataset.view);
+      });
     });
     // default dates
     $('recDate').value = todayKey();
@@ -514,6 +529,7 @@ var App = (function () {
   // ---- public API ----
   return {
     init: init, reloadAll: reloadAll, go: go, fabAction: fabAction,
+    openMore: openMore, closeMore: closeMore, goFromMore: goFromMore,
     renderMembers: renderMembers, openMemberForm: openMemberForm,
     addMemberFromRoster: addMemberFromRoster,
     closeMemberForm: closeMemberForm, saveMember: saveMember,

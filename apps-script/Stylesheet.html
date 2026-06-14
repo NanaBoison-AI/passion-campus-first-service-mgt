@@ -70,6 +70,20 @@
   .nav-item.active { color: var(--brand); }
   .nav-item.active .ti { transform: translateY(-2px) scale(1.06); }
   .nav-item:active { background: var(--surface-2); }
+  /* On phones Trends/History live under the "More" tab. */
+  .nav-secondary { display: none; }
+
+  /* "More" sheet menu rows */
+  .more-item {
+    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+    padding: 16px 14px; background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: var(--r); cursor: pointer; font-family: inherit; font-size: 15px; color: var(--text);
+  }
+  .more-item:active { background: var(--surface-2); }
+  .more-item .mi-ic { font-size: 24px; }
+  .more-item .mi-txt { display: flex; flex-direction: column; flex: 1; }
+  .more-item .mi-txt .muted { font-size: 12.5px; font-weight: 500; }
+  .more-item .mi-arrow { color: var(--muted); font-size: 22px; }
 
   /* ---------- FAB ---------- */
   .fab {
@@ -274,6 +288,9 @@
     .nav-item .ti { font-size: 19px; }
     .nav-item.active { background: var(--brand-soft); }
     .nav-item.active .ti { transform: none; }
+    /* Full menu fits in the rail — show Trends/History, drop the More tab. */
+    .nav-secondary { display: flex; }
+    .nav-more { display: none; }
 
     .appbar { background: var(--bg); backdrop-filter: none; border-bottom: 1px solid var(--line); }
     .fab { right: 30px; bottom: 28px; width: 60px; height: 60px; font-size: 30px; }
