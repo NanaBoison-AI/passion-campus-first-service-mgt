@@ -52,10 +52,14 @@ apple-touch-icon.png  Home-screen icon (180x180)
 ```
 
 > **Favicon:** the browser tab uses a custom FLCPC icon via
-> `HtmlOutput.setFaviconUrl(FAVICON_DATA_URI)` (see `Favicon.gs` + `Setup.gs`).
-> When pasting files in, include **`Favicon.gs`** so `doGet`/`openDashboard`
-> can reference it. To change the icon, edit `favicon.png`, re-base64 it, and
-> update the data URI in `Favicon.gs`.
+> `HtmlOutput.setFaviconUrl(FAVICON_URL)` (see `Favicon.gs` + `Setup.gs`).
+> Apps Script's `setFaviconUrl()` only accepts a **publicly hosted image URL**
+> (it rejects `data:` URIs), so `FAVICON_URL` points at `favicon.png` on GitHub
+> raw. When pasting files in, include **`Favicon.gs`**. To use your own icon,
+> host a PNG/ICO anywhere public and change `FAVICON_URL` (a raw GitHub URL,
+> your own site, or a Drive `uc?export=view&id=…` link all work). The call is
+> wrapped in a `try/catch`, so an unreachable URL falls back gracefully instead
+> of breaking the app.
 
 ---
 

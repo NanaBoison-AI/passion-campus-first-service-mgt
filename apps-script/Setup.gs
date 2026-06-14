@@ -20,20 +20,36 @@ function openDashboard() {
     .evaluate()
     .setWidth(1200)
     .setHeight(800)
-    .setFaviconUrl(FAVICON_DATA_URI)
     .setTitle('Members CMS');
+  applyFavicon_(html);
   SpreadsheetApp.getUi().showModalDialog(html, 'Members CMS');
 }
 
 /** Web-app entry point (Deploy > New deployment > Web app). */
 function doGet() {
   setupSheets();
-  return HtmlService.createTemplateFromFile('Index')
+  var out = HtmlService.createTemplateFromFile('Index')
     .evaluate()
     .setTitle('Members CMS')
-    .setFaviconUrl(FAVICON_DATA_URI)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  return applyFavicon_(out);
+}
+
+/**
+ * Applies the branded favicon. setFaviconUrl() needs a public image URL and
+ * throws on an unsupported/unreachable one, so guard it — a favicon must never
+ * be able to break the app.
+ */
+function applyFavicon_(out) {
+  try {
+    if (typeof FAVICON_URL === 'string' && /^https?:\/\//.test(FAVICON_URL)) {
+      out.setFaviconUrl(FAVICON_URL);
+    }
+  } catch (e) {
+    // Ignore: fall back to the default favicon / the <head> <link> tag.
+  }
+  return out;
 }
 
 /** Lets HTML files include other HTML/CSS/JS partials. */
