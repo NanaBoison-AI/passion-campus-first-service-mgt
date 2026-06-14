@@ -210,9 +210,18 @@ var App = (function () {
       '<th>Status</th><th>Joined</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
-  function openMemberForm(id) {
+  // Opened from the attendance roster: add a walk-in and mark them present.
+  function addMemberFromRoster() {
+    if (!state.rosterDate) { toast('Load a roster first', 'err'); return; }
+    openMemberForm(null, 'roster');
+  }
+
+  function openMemberForm(id, context) {
+    state.memberFormContext = context || null;
     var m = id ? state.members.filter(function (x) { return x.id === id; })[0] : null;
-    $('memberModalTitle').textContent = m ? 'Edit Member' : 'Add Member';
+    $('memberModalTitle').textContent = m
+      ? 'Edit Member'
+      : (context === 'roster' ? 'Add Member (present today)' : 'Add Member');
     $('mId').value = m ? m.id : '';
     $('mName').value = m ? m.name : '';
     $('mContact').value = m ? m.contact : '';
@@ -239,11 +248,27 @@ var App = (function () {
     };
     if (!data.name) { toast('Name is required', 'err'); return; }
     $('mSaveBtn').disabled = true;
+    var isAdd = !data.id;
+    var fromRoster = state.memberFormContext === 'roster';
     var fn = data.id ? 'updateMember' : 'addMember';
-    call(fn, [data]).then(function () {
+    call(fn, [data]).then(function (res) {
       $('mSaveBtn').disabled = false;
+      state.memberFormContext = null;
       closeMemberForm();
-      toast(data.id ? 'Member updated' : 'Member added', 'ok');
+
+      // Added from the attendance roster → drop them in, pre-marked present.
+      if (isAdd && fromRoster && res && res.id) {
+        state.roster.push({
+          id: res.id, name: data.name, contact: data.contact,
+          residence: data.residence, status: data.status, present: true
+        });
+        state.roster.sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+        $('rosterSearch').value = '';
+        renderRoster();
+        toast('“' + data.name + '” added & marked present. Press Save to record.', 'ok');
+      } else {
+        toast(data.id ? 'Member updated' : 'Member added', 'ok');
+      }
       reloadAll();
     }).catch(function (e) { $('mSaveBtn').disabled = false; toast(e.message, 'err'); });
   }
@@ -479,6 +504,7 @@ var App = (function () {
     init: init, reloadAll: reloadAll, go: go,
     toggleNav: toggleNav, openNav: openNav, closeNav: closeNav,
     renderMembers: renderMembers, openMemberForm: openMemberForm,
+    addMemberFromRoster: addMemberFromRoster,
     closeMemberForm: closeMemberForm, saveMember: saveMember,
     loadRoster: loadRoster, toggleRoster: toggleRoster, filterRoster: filterRoster,
     markAll: markAll, saveRoster: saveRoster, deleteService: deleteService,
