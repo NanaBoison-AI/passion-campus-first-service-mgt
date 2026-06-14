@@ -43,10 +43,19 @@ Members.gs        Member read / add / update API
 Attendance.gs     Attendance read / bulk-save / add / delete API
 Reports.gs        Per-date summary, yearly chart data, member history, dashboard stats
 Bridge.gs         Single whitelisted dispatcher the UI calls
+Favicon.gs        Branded favicon as a data URI (replaces the Apps Script logo)
 Index.html        App shell (sidebar + views + member modal)
 Stylesheet.html   All CSS
 JavaScript.html   Front-end controller (talks to backend via google.script.run)
+favicon.png       Source image for the favicon (64x64)
+apple-touch-icon.png  Home-screen icon (180x180)
 ```
+
+> **Favicon:** the browser tab uses a custom FLCPC icon via
+> `HtmlOutput.setFaviconUrl(FAVICON_DATA_URI)` (see `Favicon.gs` + `Setup.gs`).
+> When pasting files in, include **`Favicon.gs`** so `doGet`/`openDashboard`
+> can reference it. To change the icon, edit `favicon.png`, re-base64 it, and
+> update the data URI in `Favicon.gs`.
 
 ---
 

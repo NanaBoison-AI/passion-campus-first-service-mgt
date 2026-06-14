@@ -20,6 +20,7 @@ function openDashboard() {
     .evaluate()
     .setWidth(1200)
     .setHeight(800)
+    .setFaviconUrl(FAVICON_DATA_URI)
     .setTitle('Members CMS');
   SpreadsheetApp.getUi().showModalDialog(html, 'Members CMS');
 }
@@ -30,6 +31,7 @@ function doGet() {
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
     .setTitle('Members CMS')
+    .setFaviconUrl(FAVICON_DATA_URI)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
