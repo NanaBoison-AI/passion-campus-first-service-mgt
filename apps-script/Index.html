@@ -7,66 +7,32 @@
 </head>
 <body>
   <div id="app">
-    <!-- Mobile sidebar backdrop -->
-    <div id="sidebarOverlay" class="sidebar-overlay" onclick="App.closeNav()"></div>
+    <div id="loader" class="bar-loader hidden"></div>
+    <div id="toast" class="toast"></div>
 
-    <!-- Sidebar navigation -->
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <div class="brand-logo">FLCPC</div>
-        <div class="brand-sub">Members CMS</div>
-      </div>
-      <nav>
-        <a class="nav-item active" data-view="dashboard">📊 Dashboard</a>
-        <a class="nav-item" data-view="members">👥 Members</a>
-        <a class="nav-item" data-view="record">✅ Record Attendance</a>
-        <a class="nav-item" data-view="report">📅 Service Report</a>
-        <a class="nav-item" data-view="trends">📈 Trends</a>
-        <a class="nav-item" data-view="history">🔎 Member History</a>
-      </nav>
-      <div class="sidebar-foot">
-        <button class="btn btn-ghost btn-sm" onclick="App.reloadAll()">↻ Refresh data</button>
-      </div>
-    </aside>
-
-    <!-- Main content -->
     <main class="content">
-      <!-- Mobile top bar (hidden on desktop) -->
-      <header class="topbar">
-        <button class="hamburger" onclick="App.toggleNav()" aria-label="Menu">☰</button>
-        <div class="topbar-title">FLCPC · Members CMS</div>
+      <header class="appbar">
+        <div class="appbar-title" id="appbarTitle">Dashboard</div>
+        <button class="appbar-refresh" onclick="App.reloadAll()" aria-label="Refresh">↻</button>
       </header>
-
-      <div id="toast" class="toast"></div>
-      <div id="loader" class="loader hidden"><div class="spinner"></div></div>
 
       <!-- DASHBOARD -->
       <section class="view" id="view-dashboard">
-        <h1>Dashboard</h1>
         <div class="cards" id="statCards"></div>
         <div class="panel">
-          <div class="panel-head">
-            <h2>Recent services</h2>
-          </div>
+          <div class="panel-head"><h2>Recent services</h2></div>
           <div id="recentServices" class="table-wrap"></div>
         </div>
       </section>
 
       <!-- MEMBERS -->
       <section class="view hidden" id="view-members">
-        <div class="view-head">
-          <h1>Members</h1>
-          <div class="view-actions">
-            <input id="memberSearch" class="input" placeholder="Search name / contact / residence…" oninput="App.renderMembers()">
-            <button class="btn btn-primary" onclick="App.openMemberForm()">＋ Add Member</button>
-          </div>
-        </div>
-        <div id="membersTable" class="table-wrap"></div>
+        <input id="memberSearch" class="input search" placeholder="🔍  Search name / contact / residence…" oninput="App.renderMembers()">
+        <div id="membersTable"></div>
       </section>
 
       <!-- RECORD ATTENDANCE -->
       <section class="view hidden" id="view-record">
-        <h1>Record Attendance</h1>
         <div class="panel">
           <div class="record-controls">
             <label>Service date
@@ -75,31 +41,29 @@
             <label>Service type
               <select id="recType" class="input"></select>
             </label>
-            <button class="btn btn-secondary" onclick="App.loadRoster()">Load roster</button>
+            <button class="btn btn-primary" onclick="App.loadRoster()">Load roster</button>
           </div>
         </div>
 
-        <div id="rosterPanel" class="panel hidden">
+        <div id="rosterPanel" class="hidden">
           <div class="roster-toolbar">
-            <input id="rosterSearch" class="input" placeholder="Filter members…" oninput="App.filterRoster()">
+            <input id="rosterSearch" class="input" placeholder="🔍  Filter members…" oninput="App.filterRoster()">
             <div class="roster-bulk">
-              <button class="btn btn-ghost btn-sm" onclick="App.markAll(true)">Select all present</button>
+              <button class="btn btn-ghost btn-sm" onclick="App.markAll(true)">Select all</button>
               <button class="btn btn-ghost btn-sm" onclick="App.markAll(false)">Clear all</button>
-              <button class="btn btn-secondary btn-sm" onclick="App.addMemberFromRoster()">＋ New member</button>
             </div>
             <div class="roster-count"><span id="rosterPresentCount">0</span> present</div>
           </div>
           <div id="rosterList" class="roster-list"></div>
           <div class="roster-foot">
             <button class="btn btn-primary btn-lg" onclick="App.saveRoster()">💾 Save attendance</button>
-            <button class="btn btn-danger-ghost" onclick="App.deleteService()">🗑 Delete this service's records</button>
+            <button class="btn btn-danger-ghost btn-sm" onclick="App.deleteService()">🗑 Delete this service's records</button>
           </div>
         </div>
       </section>
 
       <!-- SERVICE REPORT -->
       <section class="view hidden" id="view-report">
-        <h1>Service Report</h1>
         <div class="panel">
           <div class="record-controls">
             <label>Service date
@@ -108,7 +72,7 @@
             <label>Service type
               <select id="repType" class="input"><option value="">All types</option></select>
             </label>
-            <button class="btn btn-secondary" onclick="App.loadReport()">Show report</button>
+            <button class="btn btn-primary" onclick="App.loadReport()">Show report</button>
           </div>
         </div>
         <div id="reportSummary"></div>
@@ -126,7 +90,6 @@
 
       <!-- TRENDS -->
       <section class="view hidden" id="view-trends">
-        <h1>Attendance Trends</h1>
         <div class="panel">
           <div class="record-controls">
             <label>Year
@@ -146,7 +109,7 @@
             <label>Service type
               <select id="trendType" class="input"><option value="">All types</option></select>
             </label>
-            <button class="btn btn-secondary" onclick="App.loadChart()">Update chart</button>
+            <button class="btn btn-primary" onclick="App.loadChart()">Update chart</button>
           </div>
         </div>
         <div class="panel">
@@ -157,7 +120,6 @@
 
       <!-- MEMBER HISTORY -->
       <section class="view hidden" id="view-history">
-        <h1>Member Service History</h1>
         <div class="panel">
           <div class="record-controls">
             <label>Member
@@ -180,29 +142,43 @@
             <label>Exact date
               <input type="date" id="histDay" class="input">
             </label>
-            <button class="btn btn-secondary" onclick="App.loadHistory()">Show history</button>
+            <button class="btn btn-primary" onclick="App.loadHistory()">Show history</button>
             <button class="btn btn-ghost btn-sm" onclick="App.clearHistoryFilters()">Clear filters</button>
           </div>
         </div>
         <div id="historyResult"></div>
       </section>
     </main>
+
+    <!-- Context floating action button -->
+    <button class="fab hidden" id="fab" onclick="App.fabAction()" aria-label="Add">＋</button>
+
+    <!-- Bottom tab bar (left rail on desktop) -->
+    <nav class="tabbar">
+      <a class="nav-item active" data-view="dashboard"><span class="ti">🏠</span><span class="tl">Home</span></a>
+      <a class="nav-item" data-view="members"><span class="ti">👥</span><span class="tl">Members</span></a>
+      <a class="nav-item" data-view="record"><span class="ti">✅</span><span class="tl">Record</span></a>
+      <a class="nav-item" data-view="report"><span class="ti">📅</span><span class="tl">Report</span></a>
+      <a class="nav-item" data-view="trends"><span class="ti">📈</span><span class="tl">Trends</span></a>
+      <a class="nav-item" data-view="history"><span class="ti">🔎</span><span class="tl">History</span></a>
+    </nav>
   </div>
 
-  <!-- Member add/edit modal -->
-  <div id="memberModal" class="modal hidden">
-    <div class="modal-card">
-      <div class="modal-head">
+  <!-- Member add/edit bottom sheet -->
+  <div id="memberModal" class="sheet hidden">
+    <div class="sheet-card">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
         <h2 id="memberModalTitle">Add Member</h2>
         <button class="icon-btn" onclick="App.closeMemberForm()">✕</button>
       </div>
-      <div class="modal-body">
+      <div class="sheet-body">
         <input type="hidden" id="mId">
         <label>Name <span class="req">*</span>
           <input id="mName" class="input" placeholder="Full name">
         </label>
         <label>Contact
-          <input id="mContact" class="input" placeholder="Phone number(s)">
+          <input id="mContact" class="input" inputmode="tel" placeholder="Phone number(s)">
         </label>
         <label>Residence
           <input id="mResidence" class="input" placeholder="Area / landmark">
@@ -222,7 +198,7 @@
           <textarea id="mNotes" class="input" rows="2"></textarea>
         </label>
       </div>
-      <div class="modal-foot">
+      <div class="sheet-foot">
         <button class="btn btn-ghost" onclick="App.closeMemberForm()">Cancel</button>
         <button class="btn btn-primary" id="mSaveBtn" onclick="App.saveMember()">Save</button>
       </div>

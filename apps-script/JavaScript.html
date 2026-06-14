@@ -13,6 +13,7 @@ var App = (function () {
     roster: [],          // current record-attendance roster
     rosterDate: null,
     rosterType: null,
+    currentView: 'dashboard',
     chartReady: false
   };
 
@@ -63,28 +64,39 @@ var App = (function () {
   }
 
   // ---- navigation ----
+  var VIEW_TITLES = {
+    dashboard: 'Dashboard', members: 'Members', record: 'Record Attendance',
+    report: 'Service Report', trends: 'Attendance Trends', history: 'Member History'
+  };
+  // Views whose FAB adds something (label + handler set in fabAction).
+  var FAB_VIEWS = { members: '＋', record: '＋' };
+
   function go(view) {
+    state.currentView = view;
     document.querySelectorAll('.nav-item').forEach(function (n) {
       n.classList.toggle('active', n.dataset.view === view);
     });
     document.querySelectorAll('.view').forEach(function (v) { v.classList.add('hidden'); });
     $('view-' + view).classList.remove('hidden');
-    closeNav();            // collapse the mobile menu after choosing a view
+    $('appbarTitle').textContent = VIEW_TITLES[view] || '';
+    updateFab(view);
     window.scrollTo(0, 0);
     if (view === 'trends') ensureChartLib().then(loadChart);
   }
 
-  // ---- mobile sidebar ----
-  function openNav() {
-    $('sidebar').classList.add('open');
-    $('sidebarOverlay').classList.add('show');
+  // ---- context FAB ----
+  function updateFab(view) {
+    var fab = $('fab');
+    if (FAB_VIEWS[view]) {
+      fab.textContent = FAB_VIEWS[view];
+      fab.classList.remove('hidden');
+    } else {
+      fab.classList.add('hidden');
+    }
   }
-  function closeNav() {
-    $('sidebar').classList.remove('open');
-    $('sidebarOverlay').classList.remove('show');
-  }
-  function toggleNav() {
-    if ($('sidebar').classList.contains('open')) closeNav(); else openNav();
+  function fabAction() {
+    if (state.currentView === 'members') openMemberForm();
+    else if (state.currentView === 'record') addMemberFromRoster();
   }
 
   // ================= BOOTSTRAP =================
@@ -112,6 +124,11 @@ var App = (function () {
 
   function reloadAll() {
     showLoader(true);
+    // Skeleton placeholders while the first payload loads.
+    if (!state.members.length) {
+      $('statCards').innerHTML = Array.apply(null, { length: 4 })
+        .map(function () { return '<div class="stat-card skel skel-card"></div>'; }).join('');
+    }
     call('getBootstrap').then(function (b) {
       state.config = b.config;
       state.members = b.members;
@@ -191,23 +208,18 @@ var App = (function () {
       return [m.name, m.contact, m.residence].join(' ').toLowerCase().indexOf(q) !== -1;
     });
     if (!list.length) {
-      $('membersTable').innerHTML = '<div class="empty">No members found.</div>';
+      $('membersTable').innerHTML = '<div class="empty">No members found.<br>Tap ＋ to add one.</div>';
       return;
     }
-    var rows = list.map(function (m) {
-      return '<tr>' +
-        '<td><b>' + esc(m.name) + '</b></td>' +
-        '<td>' + esc(m.contact) + '</td>' +
-        '<td>' + esc(m.residence) + '</td>' +
-        '<td>' + esc(m.gender) + '</td>' +
-        '<td>' + statusChip(m.status) + '</td>' +
-        '<td>' + esc(m.dateJoined) + '</td>' +
-        '<td><button class="link-btn" onclick="App.openMemberForm(\'' + esc(m.id) + '\')">Edit</button></td>' +
-        '</tr>';
+    $('membersTable').innerHTML = list.map(function (m) {
+      var sub = [m.residence, m.contact].filter(Boolean).join(' · ') || '—';
+      return '<div class="mcard" onclick="App.openMemberForm(\'' + esc(m.id) + '\')">' +
+        '<div class="avatar">' + esc(initials(m.name)) + '</div>' +
+        '<div class="mc-main"><div class="mc-name">' + esc(m.name) + '</div>' +
+        '<div class="mc-sub">' + esc(sub) + '</div></div>' +
+        statusChip(m.status) +
+        '<span class="mc-edit">✎</span></div>';
     }).join('');
-    $('membersTable').innerHTML =
-      '<table><thead><tr><th>Name</th><th>Contact</th><th>Residence</th><th>Gender</th>' +
-      '<th>Status</th><th>Joined</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
   // Opened from the attendance roster: add a walk-in and mark them present.
@@ -501,8 +513,7 @@ var App = (function () {
 
   // ---- public API ----
   return {
-    init: init, reloadAll: reloadAll, go: go,
-    toggleNav: toggleNav, openNav: openNav, closeNav: closeNav,
+    init: init, reloadAll: reloadAll, go: go, fabAction: fabAction,
     renderMembers: renderMembers, openMemberForm: openMemberForm,
     addMemberFromRoster: addMemberFromRoster,
     closeMemberForm: closeMemberForm, saveMember: saveMember,

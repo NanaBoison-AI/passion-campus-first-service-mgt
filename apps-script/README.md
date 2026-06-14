@@ -29,7 +29,7 @@ helpful columns) and adds a friendly dashboard on top.
 | **Bar graph of present count across a year (filter by month)** | *Trends* tab — Google column chart. Whole-year view = one bar per month; pick a month = one bar per service day. Also filterable by service type. |
 | **A person's attended services (filter year / month / day)** | *Member History* tab — pick a member and optional year, month, and/or exact date. |
 | **Extra CMS goodies** | Dashboard KPIs (totals, active members, avg. recent attendance), recent-services table, member status (Active/Inactive/Visitor), gender, date joined, notes, search everywhere, service types, multi-service days, name-change sync into attendance, sample-data loader. |
-| **Mobile friendly** | Responsive layout: the sidebar collapses into a hamburger menu under 760px, controls/forms go full-width, the roster becomes a tappable one-per-row checklist, and the chart redraws on rotation. Use the **web-app deployment** on phones (not the in-Sheets dialog). |
+| **Mobile-first, modern UI** | Phone-native design that scales up to desktop: a **bottom tab bar** (becomes a left rail ≥900px), a context **floating action button** (add member / walk-in), **bottom-sheet** forms, a sticky **Save attendance** bar, card-based member list, skeleton loaders, a slim top progress bar and large tap targets. The chart redraws on rotation. Use the **web-app deployment** on phones (not the in-Sheets dialog). |
 
 ---
 
