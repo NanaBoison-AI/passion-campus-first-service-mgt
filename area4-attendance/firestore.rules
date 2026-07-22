@@ -2,30 +2,30 @@ rules_version = '2';
 
 // Attendance is stored under: groups/{groupId}/attendance/{yyyy-MM-dd}
 //
-// ⚠️  DEFAULT (open) — quickest to get running, but ANY visitor with the app
-//     URL can read/write attendance. Fine for a private pilot; NOT for real
-//     data. Swap for the authenticated block below before going live.
+// Requires a signed-in user (Firebase Email/Password). Accounts are created by
+// the admin in the Firebase console — there is no public sign-up — so "any
+// authenticated user" is effectively "any admin you provisioned".
 service cloud.firestore {
   match /databases/{database}/documents {
     match /groups/{groupId}/attendance/{date} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null;
     }
   }
 }
 
 // ---------------------------------------------------------------------------
-// RECOMMENDED — require Firebase Auth (see README "Locking it down"). Replace
-// the block above with this once you enable Google sign-in and an allowlist.
+// Stricter option — restrict to an explicit allowlist of UIDs, in addition to
+// requiring auth. Create an `allowedUsers/{uid}` doc per permitted account.
 //
 // service cloud.firestore {
 //   match /databases/{database}/documents {
 //     function isAllowed() {
 //       return request.auth != null
-//         && exists(/databases/$(database)/documents/allowedUsers/$(request.auth.token.email));
+//         && exists(/databases/$(database)/documents/allowedUsers/$(request.auth.uid));
 //     }
 //     match /groups/{groupId}/attendance/{date} {
 //       allow read, write: if isAllowed();
 //     }
-//     match /allowedUsers/{email} { allow read: if request.auth != null; }
+//     match /allowedUsers/{uid} { allow read: if request.auth != null; }
 //   }
 // }

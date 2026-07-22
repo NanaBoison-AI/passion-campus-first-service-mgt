@@ -202,3 +202,16 @@ textarea.input { min-height: 68px; }
 .mt { margin-top: 12px; } .mb { margin-bottom: 12px; }
 .err-box { background: var(--red-soft); color: var(--red); border-radius: var(--r); padding: 14px; font-size: 14px; }
 .spacer { flex: 1; }
+
+/* ---- Login gate ---- */
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 24px 16px calc(24px + var(--safe-b)); }
+.login-card { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-xl); padding: 26px 22px; box-shadow: var(--sh); }
+.login-logo { width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800;
+  color: #fff; background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.login-title { text-align: center; font-size: 22px; font-weight: 800; }
+.login-sub { text-align: center; margin-bottom: 18px; font-size: 13px; }
+.login-card .field { margin-bottom: 14px; }
+.login-card .btn { margin-top: 4px; }

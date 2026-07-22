@@ -87,13 +87,18 @@ against the group's member list.
 5. Fill in the `GROUPS`/`MEMBERS` tabs with your real data (or manage members
    from the app once it's running).
 
-### 2. Firebase (Firestore)
+### 2. Firebase (Firestore + Auth)
 1. Create a Firebase project → **Build → Firestore Database → Create** (start in
    production mode).
-2. **Project settings → Your apps → Web app** → copy the SDK config into the
+2. **Build → Authentication → Get started → Email/Password → Enable.**
+3. Create accounts under **Authentication → Users → Add user**. Use the pseudo
+   email `username@<VITE_AUTH_EMAIL_DOMAIN>` (e.g. `area4admin@area4.app`) and a
+   password. Users only ever type the **username** part. There is no public
+   sign-up — you provision every account here.
+4. **Project settings → Your apps → Web app** → copy the SDK config into the
    `VITE_FIREBASE_*` values.
-3. Publish the rules from `firestore.rules` (**Firestore → Rules**). The default
-   is **open** for a quick pilot — read *Locking it down* below before real use.
+5. Publish the rules from `firestore.rules` (**Firestore → Rules**) — they
+   require a signed-in user.
 
 ### 3. Local dev
 ```bash
@@ -112,25 +117,35 @@ npm run dev               # http://localhost:5173  (proxies /api/sheets)
    - **Build output directory:** `dist`
 3. **Settings → Environment variables** (Production *and* Preview):
    - `SHEETS_API_URL` = your Apps Script `/exec` URL (used by the Pages Function)
+   - `FIREBASE_API_KEY` = same value as `VITE_FIREBASE_API_KEY` — **enables the
+     proxy's token check** so member data can't be fetched without logging in.
    - `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`,
      `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`,
-     `VITE_FIREBASE_APP_ID`, `VITE_AREA_LABEL`
-4. Add your Pages domain to Firebase **Auth → Settings → Authorized domains**
-   (needed if/when you enable sign-in).
+     `VITE_FIREBASE_APP_ID`, `VITE_AREA_LABEL`, `VITE_AUTH_EMAIL_DOMAIN`
+4. Add your Pages domain to Firebase **Auth → Settings → Authorized domains**.
 
 `functions/api/sheets.js` is picked up automatically by Pages — no extra config.
 
 ---
 
-## Locking it down (recommended before real data)
+## Authentication (username + password)
 
-The default Firestore rules allow anyone with the URL to read/write attendance.
-To require login:
-1. Firebase **Authentication → Sign-in method → Google → Enable**.
-2. Add a `allowedUsers/{email}` doc per permitted admin (or adapt the rule).
-3. Swap `firestore.rules` for the authenticated block included at the bottom of
-   that file, and add a Google sign-in gate in the frontend (Firebase Auth).
-Ask and this can be wired in — the app is structured to drop it in.
+The app is gated by a login screen backed by **Firebase Email/Password** auth:
+
+- Users log in with a plain **username**; the app maps it to
+  `username@<VITE_AUTH_EMAIL_DOMAIN>` internally, so nobody types an email.
+- **You create every account** in the Firebase console (see setup step 2) — no
+  public sign-up.
+- Both data paths are protected once configured:
+  - **Firestore** (attendance) — rules require `request.auth != null`.
+  - **Sheets proxy** (members) — the Pages Function verifies the caller's
+    Firebase ID token when `FIREBASE_API_KEY` is set, so member data isn't
+    readable without a login either.
+- Password resets: change a user's password from **Authentication → Users** (or
+  wire the in-app `changePassword` helper to a settings screen).
+
+To restrict further to specific accounts, use the allowlist variant at the
+bottom of `firestore.rules`.
 
 ## Notes & trade-offs
 - **No member deletion** by design — set `STATUS` to *Inactive* instead.

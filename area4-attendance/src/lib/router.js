@@ -20,7 +20,7 @@ export function createRouter(routes, onRender) {
   function render() { onRender(resolve()); }
 
   window.addEventListener('hashchange', render);
-  return { start: render };
+  return { render };
 }
 
 export const navigate = (hash) => { location.hash = hash; };

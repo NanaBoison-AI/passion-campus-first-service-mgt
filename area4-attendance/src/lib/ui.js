@@ -2,8 +2,11 @@
 import { h, clear, mount } from './dom.js';
 import { navigate } from './router.js';
 
-/** Render the top app bar. backHash '' hides the back button. */
-export function setAppbar(title, { sub = '', backHash = '' } = {}) {
+/**
+ * Render the top app bar. backHash '' hides the back button.
+ * `action` = { label, onClick } renders a text button on the right.
+ */
+export function setAppbar(title, { sub = '', backHash = '', action = null } = {}) {
   const bar = document.getElementById('appbar');
   const back = backHash
     ? h('button', { class: 'ab-back', 'aria-label': 'Back', onClick: () => navigate(backHash) }, '‹')
@@ -13,7 +16,8 @@ export function setAppbar(title, { sub = '', backHash = '' } = {}) {
     h('div', { class: 'ab-title' }, [
       h('div', {}, title),
       sub ? h('div', { class: 'ab-sub' }, sub) : null
-    ])
+    ]),
+    action ? h('button', { class: 'link', onClick: action.onClick }, action.label) : null
   ]);
 }
 

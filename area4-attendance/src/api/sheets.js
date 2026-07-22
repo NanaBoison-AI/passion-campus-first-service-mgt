@@ -4,18 +4,27 @@
  * to the Apps Script Web App.
  */
 
+import { idToken } from './auth.js';
+
 const ENDPOINT = '/api/sheets';
+
+// Same-origin call, so any header is fine (no CORS preflight). The proxy
+// verifies this token before forwarding to Apps Script.
+async function authHeader() {
+  const t = await idToken();
+  return t ? { Authorization: 'Bearer ' + t } : {};
+}
 
 async function get(action, params = {}) {
   const qs = new URLSearchParams({ action, ...params }).toString();
-  const res = await fetch(`${ENDPOINT}?${qs}`, { method: 'GET' });
+  const res = await fetch(`${ENDPOINT}?${qs}`, { method: 'GET', headers: await authHeader() });
   return unwrap(res);
 }
 
 async function post(action, payload = {}) {
   const res = await fetch(ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // simple request, no preflight
+    headers: { 'Content-Type': 'text/plain;charset=utf-8', ...(await authHeader()) },
     body: JSON.stringify({ action, ...payload })
   });
   return unwrap(res);

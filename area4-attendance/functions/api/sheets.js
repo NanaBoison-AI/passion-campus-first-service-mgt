@@ -16,6 +16,16 @@ export async function onRequest(context) {
     return json({ error: 'SHEETS_API_URL is not configured for this deployment.' }, 500);
   }
 
+  // Require a valid Firebase ID token when FIREBASE_API_KEY is configured.
+  // (Set it in the Pages env to turn on protection — see README.)
+  if (env.FIREBASE_API_KEY) {
+    const authz = request.headers.get('Authorization') || '';
+    const token = authz.startsWith('Bearer ') ? authz.slice(7) : '';
+    if (!(await isValidToken(token, env.FIREBASE_API_KEY))) {
+      return json({ error: 'Unauthorized' }, 401);
+    }
+  }
+
   const incoming = new URL(request.url);
   const target = new URL(env.SHEETS_API_URL);
   // Forward query params (action, groupId, …).
@@ -41,6 +51,26 @@ export async function onRequest(context) {
     });
   } catch (err) {
     return json({ error: 'Upstream request failed: ' + String(err) }, 502);
+  }
+}
+
+/**
+ * Validate a Firebase ID token by looking it up via the Identity Toolkit REST
+ * API. Avoids hand-rolling JWT signature verification and is reliably correct;
+ * an invalid/expired token returns no users.
+ */
+async function isValidToken(idToken, apiKey) {
+  if (!idToken) return false;
+  try {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) }
+    );
+    if (!res.ok) return false;
+    const data = await res.json();
+    return Array.isArray(data.users) && data.users.length > 0;
+  } catch {
+    return false;
   }
 }
 

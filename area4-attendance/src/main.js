@@ -1,6 +1,8 @@
 import './styles.css';
 import { createRouter } from './lib/router.js';
 import { mount, spinner, h } from './lib/dom.js';
+import { onAuth } from './api/auth.js';
+import { renderLogin } from './views/login.js';
 
 import { renderGroups } from './views/groups.js';
 import { renderDashboard } from './views/dashboard.js';
@@ -9,6 +11,7 @@ import { renderRecord } from './views/record.js';
 import { renderReview } from './views/review.js';
 import { renderGraphs } from './views/graphs.js';
 
+const appbarEl = document.getElementById('appbar');
 const viewEl = document.getElementById('view');
 
 const routes = [
@@ -33,4 +36,17 @@ async function onRender({ handler, params }) {
 }
 
 const router = createRouter(routes, onRender);
-router.start();
+
+// ---- Auth gate ----
+mount(viewEl, spinner()); // while the first auth state resolves
+
+onAuth((user) => {
+  if (user) {
+    appbarEl.style.display = '';
+    router.render();
+  } else {
+    appbarEl.style.display = 'none';
+    mount(appbarEl, []);
+    mount(viewEl, renderLogin());
+  }
+});
