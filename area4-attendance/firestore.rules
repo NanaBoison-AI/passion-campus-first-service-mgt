@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Attendance is stored under: groups/{groupId}/attendance/{yyyy-MM-dd}
+//
+// ⚠️  DEFAULT (open) — quickest to get running, but ANY visitor with the app
+//     URL can read/write attendance. Fine for a private pilot; NOT for real
+//     data. Swap for the authenticated block below before going live.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /groups/{groupId}/attendance/{date} {
+      allow read, write: if true;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RECOMMENDED — require Firebase Auth (see README "Locking it down"). Replace
+// the block above with this once you enable Google sign-in and an allowlist.
+//
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     function isAllowed() {
+//       return request.auth != null
+//         && exists(/databases/$(database)/documents/allowedUsers/$(request.auth.token.email));
+//     }
+//     match /groups/{groupId}/attendance/{date} {
+//       allow read, write: if isAllowed();
+//     }
+//     match /allowedUsers/{email} { allow read: if request.auth != null; }
+//   }
+// }

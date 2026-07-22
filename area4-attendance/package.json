@@ -1,0 +1,20 @@
+{
+  "name": "area4-attendance",
+  "version": "0.1.0",
+  "description": "Area 4 church group membership & attendance manager (Google Sheets + Firebase, hosted on Cloudflare Pages)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "pages:dev": "wrangler pages dev dist"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.3",
+    "firebase": "^10.12.2"
+  },
+  "devDependencies": {
+    "vite": "^5.3.1",
+    "wrangler": "^3.60.0"
+  }
+}
