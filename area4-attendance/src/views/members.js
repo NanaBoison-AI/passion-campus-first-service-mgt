@@ -92,6 +92,9 @@ export async function renderMembers({ groupId }) {
   paint();
   return h('div', {}, [
     h('button', { class: 'btn primary block mb', onClick: () => openForm(null) }, '＋  Add member'),
+    g && g.sheetUrl
+      ? h('a', { class: 'link mb', href: g.sheetUrl, target: '_blank', rel: 'noopener', style: 'display:inline-block' }, 'Open group sheet ↗')
+      : null,
     search,
     listEl
   ]);

@@ -3,8 +3,9 @@
 A mobile-first, minimalist web app to manage **church group memberships** and
 **attendance** for the groups under *Area 4*.
 
-- **Membership + group data** lives in **Google Sheets** (easy for an admin to
-  upload/edit) — exposed to the app via a tiny **Apps Script JSON API**.
+- **Groups + membership data** lives in **Google Sheets** — one master *groups
+  registry* sheet, and **one separate members sheet per group** (each managed by
+  a different person). Exposed to the app via a tiny **Apps Script JSON API**.
 - **Attendance data** lives in **Firebase Firestore** (easy to review & update).
 - The **frontend** is a static **Vite** app hosted on **Cloudflare Pages**, with
   a Cloudflare **Pages Function** proxying the Sheets API (so there's no CORS and
@@ -55,15 +56,33 @@ area4-attendance/
 
 ## Data model
 
-**Google Sheet — `GROUPS` tab**
+**Master registry sheet — `GROUPS` tab** (the script is bound to this one)
 
-| GROUP_ID | NAME | DESCRIPTION | LEADER | CONTACT | MEETING_DAY |
-|----------|------|-------------|--------|---------|-------------|
+| GROUP_ID | NAME | DESCRIPTION | LEADER | CONTACT | MEETING_DAY | MEMBERS_SHEET | MEMBERS_TAB |
+|----------|------|-------------|--------|---------|-------------|---------------|-------------|
 
-**Google Sheet — `MEMBERS` tab** (one row per member, `GROUP_ID` links to a group)
+- **MEMBERS_SHEET** — the group's own members spreadsheet: paste its **URL** (or
+  id). Each group is a separate file, managed by whoever runs that group.
+- **MEMBERS_TAB** — *(optional)* tab name inside that file. Blank → a tab named
+  `MEMBERS` if present, else the first tab.
 
-| MEMBER_ID | GROUP_ID | NAME | CONTACT | RESIDENCE | GENDER | STATUS | DATE_JOINED | NOTES |
-|-----------|----------|------|---------|-----------|--------|--------|-------------|-------|
+**Each group's own members sheet** — just needs a header row with at least a
+`NAME` column. These common headers are auto-detected (case-insensitive), so the
+managers can keep their existing layout:
+
+| Field | Accepted header names |
+|-------|-----------------------|
+| Name | NAME, Full Name, Member |
+| Contact | CONTACT, PHONE, MOBILE, TEL |
+| Residence | RESIDENCE, ADDRESS, LOCATION, AREA |
+| Gender | GENDER, SEX |
+| Status | STATUS |
+| Notes | NOTES, REMARKS, COMMENTS |
+| Id | MEMBER_ID, ID *(added automatically if missing)* |
+
+> A `MEMBER_ID` column is created and back-filled automatically so members have
+> stable ids for attendance — **the deploying account needs edit access** to each
+> group's sheet.
 
 **Firestore** — `groups/{groupId}/attendance/{yyyy-MM-dd}`
 ```json
@@ -76,16 +95,19 @@ against the group's member list.
 
 ## Setup
 
-### 1. Google Sheet + Apps Script API
-1. Create a Google Sheet (this holds groups + members).
+### 1. Google Sheets + Apps Script API
+1. Create the **master registry** Google Sheet (this holds the group list).
 2. **Extensions → Apps Script**. Paste `apps-script/Code.gs`, and paste
    `apps-script/appsscript.json` into ⚙️ **Project Settings → Show appsscript.json**.
-3. In the editor, run the `setupSheets` function once (creates the `GROUPS` and
-   `MEMBERS` tabs with headers + two sample groups). Approve the permission prompt.
-4. **Deploy → New deployment → Web app**: *Execute as* **Me**, *Who has access*
+3. Run the `setupGroupsSheet` function once (creates the `GROUPS` tab with
+   headers + two sample rows). Approve the permission prompt — it now asks for
+   access to your spreadsheets because it opens each group's separate sheet.
+4. For each group, create/keep its **own members spreadsheet**, **share it with
+   the deploying Google account (Editor)**, and paste its URL into the group's
+   `MEMBERS_SHEET` cell in the `GROUPS` tab. Set `MEMBERS_TAB` if the members
+   aren't on a tab named `MEMBERS`/the first tab.
+5. **Deploy → New deployment → Web app**: *Execute as* **Me**, *Who has access*
    **Anyone**. Copy the **/exec URL** — that's your `SHEETS_API_URL`.
-5. Fill in the `GROUPS`/`MEMBERS` tabs with your real data (or manage members
-   from the app once it's running).
 
 ### 2. Firebase (Firestore + Auth)
 1. Create a Firebase project → **Build → Firestore Database → Create** (start in
