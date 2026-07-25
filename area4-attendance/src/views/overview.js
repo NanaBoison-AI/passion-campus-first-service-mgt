@@ -55,7 +55,7 @@ export async function renderOverview() {
       stat(totalPresent, 'Present', 'var(--green)'),
       stat(totalConsidered, 'Considered'),
       stat(rate + '%', 'Present rate'),
-      stat(`${recorded}/${results.length}`, 'Groups recorded')
+      stat(`${recorded}/${results.length}`, 'Ministries recorded')
     ]));
 
     // Recorded groups first (by present desc), then the ones still outstanding.
@@ -95,7 +95,7 @@ export async function renderOverview() {
   return h('div', {}, [
     h('div', { class: 'card' }, h('label', { class: 'field' }, [h('span', {}, 'Date'), dateInput])),
     summaryEl,
-    h('div', { class: 'section-title' }, 'By group'),
+    h('div', { class: 'section-title' }, 'Ministries'),
     listEl
   ]);
 }
