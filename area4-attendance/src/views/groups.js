@@ -7,10 +7,10 @@ import { signOutUser } from '../api/auth.js';
 const AREA = import.meta.env.VITE_AREA_LABEL || 'Area 4';
 
 export async function renderGroups() {
-  setAppbar(AREA, { sub: 'Select a group', action: { label: 'Sign out', onClick: () => signOutUser() } });
+  setAppbar(AREA, { sub: 'Select a ministry', action: { label: 'Sign out', onClick: () => signOutUser() } });
   const groups = await loadGroups();
   if (!groups.length) {
-    return empty('No groups yet. Add rows to the GROUPS tab of your Google Sheet.');
+    return empty('No ministries yet. Add rows to the GROUPS tab of your Google Sheet.');
   }
   return h('div', {}, [
     h('div', {
@@ -20,11 +20,11 @@ export async function renderGroups() {
       h('div', { class: 'a-ic' }, '📊'),
       h('div', { class: 'g-main' }, [
         h('div', { class: 'g-name' }, 'Area dashboard'),
-        h('div', { class: 'g-sub' }, 'Attendance across all groups, by date')
+        h('div', { class: 'g-sub' }, 'Attendance across all ministries, by date')
       ]),
       h('div', { class: 'g-arrow' }, '›')
     ])),
-    h('div', { class: 'section-title' }, `${groups.length} group${groups.length > 1 ? 's' : ''}`),
+    h('div', { class: 'section-title' }, `${groups.length} ministr${groups.length === 1 ? 'y' : 'ies'}`),
     h('div', { class: 'list' }, groups.map(groupRow))
   ]);
 }

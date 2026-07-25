@@ -14,7 +14,7 @@ const ACTIONS = [
 
 export async function renderDashboard({ groupId }) {
   const g = await getGroup(groupId);
-  setAppbar(g ? g.name : 'Group', { sub: AREA, backHash: '#/' });
+  setAppbar(g ? g.name : 'Ministry', { sub: AREA, backHash: '#/' });
 
   return h('div', {}, [
     g && g.description ? h('div', { class: 'card muted' }, g.description) : null,
