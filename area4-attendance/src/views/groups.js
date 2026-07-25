@@ -13,6 +13,17 @@ export async function renderGroups() {
     return empty('No groups yet. Add rows to the GROUPS tab of your Google Sheet.');
   }
   return h('div', {}, [
+    h('div', {
+      class: 'card card-tap overview-cta',
+      onClick: () => navigate('#/overview')
+    }, h('div', { class: 'group-row' }, [
+      h('div', { class: 'a-ic' }, '📊'),
+      h('div', { class: 'g-main' }, [
+        h('div', { class: 'g-name' }, 'Area dashboard'),
+        h('div', { class: 'g-sub' }, 'Attendance across all groups, by date')
+      ]),
+      h('div', { class: 'g-arrow' }, '›')
+    ])),
     h('div', { class: 'section-title' }, `${groups.length} group${groups.length > 1 ? 's' : ''}`),
     h('div', { class: 'list' }, groups.map(groupRow))
   ]);

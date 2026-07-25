@@ -5,6 +5,7 @@ import { onAuth } from './api/auth.js';
 import { renderLogin } from './views/login.js';
 
 import { renderGroups } from './views/groups.js';
+import { renderOverview } from './views/overview.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderMembers } from './views/members.js';
 import { renderRecord } from './views/record.js';
@@ -16,6 +17,7 @@ const viewEl = document.getElementById('view');
 
 const routes = [
   { path: '/', handler: renderGroups },
+  { path: '/overview', handler: renderOverview },
   { path: '/g/:groupId', handler: renderDashboard },
   { path: '/g/:groupId/members', handler: renderMembers },
   { path: '/g/:groupId/record', handler: renderRecord },
