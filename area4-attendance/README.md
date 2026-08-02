@@ -74,7 +74,8 @@ managers can keep their existing layout:
 |-------|-----------------------|
 | Name | NAME, Full Name, Member |
 | Contact | CONTACT, PHONE, MOBILE, TEL |
-| Residence | RESIDENCE, ADDRESS, LOCATION, AREA |
+| Residence | RESIDENCE, ADDRESS, AREA |
+| Location (Maps link / lat,lng) | LOCATION, MAP, MAPS, GPS, COORDINATES, GEO *(added automatically when first used)* |
 | Gender | GENDER, SEX |
 | Status | STATUS |
 | Notes | NOTES, REMARKS, COMMENTS |

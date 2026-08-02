@@ -36,6 +36,7 @@ var FIELD_ALIASES = {
   residence: ['RESIDENCE', 'ADDRESS', 'LOCATION', 'AREA', 'HOUSE ADDRESS'],
   gender: ['GENDER', 'SEX'],
   status: ['STATUS', 'MEMBERSHIP STATUS'],
+  location: ['LOCATION', 'GPS', 'COORDINATES', 'COORDS', 'MAP', 'MAP LINK', 'MAPS', 'GOOGLE MAPS', 'GEO'],
   dateJoined: ['DATE_JOINED', 'DATE JOINED', 'JOINED', 'JOIN DATE'],
   notes: ['NOTES', 'NOTE', 'REMARKS', 'COMMENT', 'COMMENTS']
 };
@@ -136,6 +137,7 @@ function getMembers(groupId) {
       name: row[cols.name],
       contact: cols.contact >= 0 ? row[cols.contact] : '',
       residence: cols.residence >= 0 ? row[cols.residence] : '',
+      location: cols.location >= 0 ? row[cols.location] : '',
       gender: cols.gender >= 0 ? row[cols.gender] : '',
       status: (cols.status >= 0 ? row[cols.status] : '') || 'Active',
       dateJoined: cols.dateJoined >= 0 ? row[cols.dateJoined] : '',
@@ -150,12 +152,14 @@ function addMember(m) {
   if (!String(m.groupId || '').trim()) throw new Error('groupId is required.');
   var tab = membersTabFor_(m.groupId);
   var cols = ensureMemberIds_(tab);
+  if (String(m.location || '').trim() && cols.location < 0) cols.location = addColumn_(tab, 'LOCATION');
   var width = Math.max(tab.getLastColumn(), highestIndex_(cols) + 1);
   var rowArr = new Array(width).fill('');
   rowArr[cols.id] = 'MEM-' + Utilities.getUuid().substring(0, 8);
   rowArr[cols.name] = String(m.name).trim();
   setIf_(rowArr, cols.contact, m.contact);
   setIf_(rowArr, cols.residence, m.residence);
+  setIf_(rowArr, cols.location, m.location);
   setIf_(rowArr, cols.gender, m.gender);
   setIf_(rowArr, cols.status, m.status || 'Active');
   if (cols.dateJoined >= 0) rowArr[cols.dateJoined] = m.dateJoined ||
@@ -170,6 +174,7 @@ function updateMember(m) {
   if (!String(m.name || '').trim()) throw new Error('Member name is required.');
   var tab = membersTabFor_(m.groupId);
   var cols = ensureMemberIds_(tab);
+  if (String(m.location || '').trim() && cols.location < 0) cols.location = addColumn_(tab, 'LOCATION');
   var values = tab.getDataRange().getValues();
   for (var r = 1; r < values.length; r++) {
     if (String(values[r][cols.id]) === String(m.id)) {
@@ -177,6 +182,7 @@ function updateMember(m) {
       tab.getRange(rowNum, cols.name + 1).setValue(String(m.name).trim());
       updCell_(tab, rowNum, cols.contact, m.contact);
       updCell_(tab, rowNum, cols.residence, m.residence);
+      updCell_(tab, rowNum, cols.location, m.location);
       updCell_(tab, rowNum, cols.gender, m.gender);
       updCell_(tab, rowNum, cols.status, m.status || 'Active');
       updCell_(tab, rowNum, cols.notes, m.notes);
@@ -196,11 +202,7 @@ function ensureMemberIds_(tab) {
     throw new Error('This group members sheet needs a "NAME" column.');
   }
   // Add a MEMBER_ID column if none exists.
-  if (cols.id < 0) {
-    var newCol = tab.getLastColumn() + 1;
-    tab.getRange(1, newCol).setValue('MEMBER_ID');
-    cols.id = newCol - 1;
-  }
+  if (cols.id < 0) cols.id = addColumn_(tab, 'MEMBER_ID');
   // Back-fill ids for named rows that are missing one.
   var last = tab.getLastRow();
   if (last >= 2) {
@@ -236,6 +238,13 @@ function resolveCols_(tab) {
     }
   });
   return cols;
+}
+
+/** Appends a header column and returns its 0-based index. */
+function addColumn_(tab, headerName) {
+  var newCol = tab.getLastColumn() + 1;
+  tab.getRange(1, newCol).setValue(headerName);
+  return newCol - 1;
 }
 
 function highestIndex_(cols) {

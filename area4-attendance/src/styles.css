@@ -147,10 +147,11 @@ textarea.input { min-height: 68px; }
 .person .p-main { flex: 1; min-width: 0; }
 .person .p-name { font-weight: 650; }
 .person .p-sub { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.call-btn { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; text-decoration: none;
-  display: flex; align-items: center; justify-content: center; font-size: 17px;
-  background: var(--green-soft); color: var(--green); }
-.call-btn:active { transform: scale(.94); }
+.call-btn, .map-btn { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; text-decoration: none;
+  display: flex; align-items: center; justify-content: center; font-size: 17px; }
+.call-btn { background: var(--green-soft); color: var(--green); }
+.map-btn { background: var(--brand-soft); color: var(--brand-d); }
+.call-btn:active, .map-btn:active { transform: scale(.94); }
 
 /* ---- Roster (record) ---- */
 .roster { display: flex; flex-direction: column; gap: 8px; }

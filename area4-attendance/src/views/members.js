@@ -42,6 +42,7 @@ export async function renderMembers({ groupId }) {
   function memberRow(m) {
     const sub = [m.residence, m.contact].filter(Boolean).join(' · ') || '—';
     const tel = telHref(m.contact);
+    const map = mapHref(m.location);
     return h('div', { class: 'person tap', onClick: () => openForm(m) }, [
       avatar(m.name),
       h('div', { class: 'p-main' }, [
@@ -49,6 +50,13 @@ export async function renderMembers({ groupId }) {
         h('div', { class: 'p-sub' }, sub)
       ]),
       statusChip(m.status),
+      map
+        ? h('a', {
+            class: 'map-btn', href: map, target: '_blank', rel: 'noopener',
+            title: 'Directions to ' + m.name, 'aria-label': 'Open location for ' + m.name,
+            onClick: (e) => e.stopPropagation()
+          }, '📍')
+        : null,
       tel
         ? h('a', {
             class: 'call-btn', href: tel, title: 'Call ' + m.name, 'aria-label': 'Call ' + m.name,
@@ -84,6 +92,7 @@ export async function renderMembers({ groupId }) {
         mk('Name *', 'name', { ph: 'Full name' }),
         mk('Contact', 'contact', { ph: 'Phone number(s)', type: 'tel' }),
         mk('Residence', 'residence', { ph: 'Area / landmark' }),
+        mk('Location (Google Maps link or lat,lng)', 'location', { ph: 'Paste a Maps link or 5.6037,-0.1870' }),
         h('div', { class: 'row-2' }, [mk('Gender', 'gender', { type: 'select', options: GENDERS }),
           mk('Status', 'status', { type: 'select', options: STATUSES })]),
         mk('Notes', 'notes', { ph: 'Optional' })
@@ -95,8 +104,8 @@ export async function renderMembers({ groupId }) {
       const payload = {
         id: m.id, groupId,
         name: f.name.value.trim(), contact: f.contact.value.trim(),
-        residence: f.residence.value.trim(), gender: f.gender.value,
-        status: f.status.value, notes: f.notes.value.trim()
+        residence: f.residence.value.trim(), location: f.location.value.trim(),
+        gender: f.gender.value, status: f.status.value, notes: f.notes.value.trim()
       };
       if (!payload.name) { toast('Name is required', 'err'); return; }
       saveBtn.disabled = true;
@@ -137,4 +146,18 @@ function telHref(contact) {
   const first = String(contact || '').split(/[\/,;]+/)[0]; // dial the first number listed
   const cleaned = first.replace(/[^\d+]/g, '');
   return cleaned.replace(/[^\d]/g, '').length >= 6 ? 'tel:' + cleaned : '';
+}
+
+/**
+ * Turn a stored location into a Google Maps URL (no API / billing needed).
+ *  - a pasted Maps link (http/https, incl. maps.app.goo.gl) → opened as-is
+ *  - "lat,lng" coordinates → universal Maps URL that deep-links the app
+ *  - any other text (an address) → treated as a Maps search query
+ * On mobile these open the Google Maps app; otherwise the browser.
+ */
+function mapHref(location) {
+  const v = String(location || '').trim();
+  if (!v) return '';
+  if (/^https?:\/\//i.test(v)) return v;
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(v);
 }
