@@ -18,9 +18,11 @@ export async function renderReview({ groupId }) {
   const listEl = h('div', { class: 'list mt' });
   let tab = 'present';
   let current = { present: [], absent: [] };
+  let currentType = 'Sunday Service';
 
   async function load() {
     const svc = await getService(groupId, dateInput.value);
+    currentType = svc.serviceType || 'Sunday Service';
     const presentIds = new Set(svc.present);
     const present = [], absent = [];
     members.forEach((m) => {
@@ -39,6 +41,7 @@ export async function renderReview({ groupId }) {
     const pPresent = pct(p, total);
     clear(summaryEl);
     summaryEl.append(
+      h('div', { class: 'section-title', style: 'margin-top:2px' }, currentType),
       h('div', { class: 'stat-grid mb' }, [
         stat(p, 'Present', 'var(--green)'),
         stat(a, 'Absent', 'var(--red)'),
@@ -79,9 +82,9 @@ export async function renderReview({ groupId }) {
   }
 
   function exportDay() {
-    const rows = [['Date', 'Name', 'Contact', 'Residence', 'Member status', 'Attendance']];
-    current.present.forEach((m) => rows.push([dateInput.value, m.name, m.contact || '', m.residence || '', m.status || '', 'Present']));
-    current.absent.forEach((m) => rows.push([dateInput.value, m.name, m.contact || '', m.residence || '', m.status || '', 'Absent']));
+    const rows = [['Date', 'Service', 'Name', 'Contact', 'Residence', 'Member status', 'Attendance']];
+    current.present.forEach((m) => rows.push([dateInput.value, currentType, m.name, m.contact || '', m.residence || '', m.status || '', 'Present']));
+    current.absent.forEach((m) => rows.push([dateInput.value, currentType, m.name, m.contact || '', m.residence || '', m.status || '', 'Absent']));
     downloadCSV(`attendance_${g ? slug(g.name) : groupId}_${dateInput.value}.csv`, rows);
   }
 
@@ -114,12 +117,13 @@ function rangeExport(groupId, g, members) {
     try {
       const services = await listServices(groupId, start.value, end.value);
       if (!services.length) { toast('No records in that range', 'err'); return; }
-      const rows = [['Date', 'Name', 'Contact', 'Residence', 'Member status', 'Attendance']];
+      const rows = [['Date', 'Service', 'Name', 'Contact', 'Residence', 'Member status', 'Attendance']];
       services.forEach((svc) => {
+        const type = svc.serviceType || 'Sunday Service';
         const presentIds = new Set(svc.present);
         members.forEach((m) => {
-          if (presentIds.has(m.id)) rows.push([svc.date, m.name, m.contact || '', m.residence || '', m.status || '', 'Present']);
-          else if (m.status !== 'Visitor') rows.push([svc.date, m.name, m.contact || '', m.residence || '', m.status || '', 'Absent']);
+          if (presentIds.has(m.id)) rows.push([svc.date, type, m.name, m.contact || '', m.residence || '', m.status || '', 'Present']);
+          else if (m.status !== 'Visitor') rows.push([svc.date, type, m.name, m.contact || '', m.residence || '', m.status || '', 'Absent']);
         });
       });
       downloadCSV(`attendance_${g ? slug(g.name) : groupId}_${start.value}_to_${end.value}.csv`, rows);

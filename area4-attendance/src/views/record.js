@@ -18,10 +18,29 @@ export async function renderRecord({ groupId }) {
   const rosterEl = h('div', { class: 'roster' });
   const wrap = h('div', {});
 
+  // Service type: Sunday Service, Midweek Service, or Other (custom name).
+  const PRESETS = ['Sunday Service', 'Midweek Service'];
+  const typeSelect = h('select', { class: 'input' }, [
+    ...PRESETS.map((t) => h('option', { value: t }, t)),
+    h('option', { value: 'Other' }, 'Other…')
+  ]);
+  const otherInput = h('input', { class: 'input mt', placeholder: 'Service name', style: 'display:none' });
+  typeSelect.addEventListener('change', syncOther);
+  function syncOther() { otherInput.style.display = typeSelect.value === 'Other' ? '' : 'none'; }
+  function effectiveType() {
+    return typeSelect.value === 'Other' ? (otherInput.value.trim() || 'Other') : typeSelect.value;
+  }
+  function setType(t) {
+    if (PRESETS.includes(t)) { typeSelect.value = t; otherInput.value = ''; }
+    else { typeSelect.value = 'Other'; otherInput.value = t; }
+    syncOther();
+  }
+
   async function loadDate() {
     const svc = await getService(groupId, dateInput.value);
     present.clear();
     svc.present.forEach((id) => present.add(id));
+    setType(svc.serviceType || 'Sunday Service');
     paint();
   }
 
@@ -67,7 +86,7 @@ export async function renderRecord({ groupId }) {
   saveBtn.addEventListener('click', async () => {
     saveBtn.disabled = true;
     try {
-      await saveService(groupId, dateInput.value, [...present]);
+      await saveService(groupId, dateInput.value, [...present], effectiveType());
       toast(`Saved · ${present.size} present`, 'ok');
     } catch (e) { toast(e.message, 'err'); } finally { saveBtn.disabled = false; }
   });
@@ -87,8 +106,12 @@ export async function renderRecord({ groupId }) {
   clear(wrap);
   wrap.append(
     h('div', { class: 'card' }, [
-      h('label', { class: 'field' }, [h('span', {}, 'Service date'), dateInput]),
-      search
+      h('div', { class: 'row-2' }, [
+        h('label', { class: 'field' }, [h('span', {}, 'Service date'), dateInput]),
+        h('label', { class: 'field' }, [h('span', {}, 'Service type'), typeSelect])
+      ]),
+      otherInput,
+      h('div', { class: 'mt' }, search)
     ]),
     h('div', { class: 'controls mb' }, [
       h('button', { class: 'btn ghost sm', onClick: () => markAll(true) }, 'Select all'),

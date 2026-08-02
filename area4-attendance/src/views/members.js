@@ -11,11 +11,24 @@ export async function renderMembers({ groupId }) {
   setAppbar('Memberships', { sub: g ? g.name : '', backHash: `#/g/${encodeURIComponent(groupId)}` });
 
   let members = await loadMembers(groupId);
+  const totalsEl = h('div', { class: 'mb' });
   const listEl = h('div', { class: 'list' });
   const search = h('input', {
     class: 'input mb', placeholder: '🔍  Search name / contact / residence…',
     onInput: () => paint(search.value)
   });
+
+  function paintTotals() {
+    const total = members.length;
+    const by = (s) => members.filter((m) => (m.status || 'Active') === s).length;
+    clear(totalsEl);
+    totalsEl.append(h('div', { class: 'stat-grid' }, [
+      stat(total, 'Total'),
+      stat(by('Active'), 'Active', 'var(--green)'),
+      stat(by('Inactive'), 'Inactive', 'var(--red)'),
+      stat(by('Visitor'), 'Visitors', 'var(--amber)')
+    ]));
+  }
 
   function paint(q = '') {
     q = q.trim().toLowerCase();
@@ -42,6 +55,7 @@ export async function renderMembers({ groupId }) {
   async function refresh() {
     invalidateMembers(groupId);
     members = await loadMembers(groupId, true);
+    paintTotals();
     paint(search.value);
   }
 
@@ -89,8 +103,10 @@ export async function renderMembers({ groupId }) {
     });
   }
 
+  paintTotals();
   paint();
   return h('div', {}, [
+    totalsEl,
     h('button', { class: 'btn primary block mb', onClick: () => openForm(null) }, '＋  Add member'),
     g && g.sheetUrl
       ? h('a', { class: 'link mb', href: g.sheetUrl, target: '_blank', rel: 'noopener', style: 'display:inline-block' }, 'Open ministry sheet ↗')
@@ -104,3 +120,8 @@ function statusChip(s) {
   const cls = s === 'Active' ? 'active' : s === 'Visitor' ? 'visitor' : 'inactive';
   return h('span', { class: 'chip ' + cls }, s || '—');
 }
+
+const stat = (num, lbl, color) => h('div', { class: 'stat' }, [
+  h('div', { class: 's-num', style: color ? `color:${color}` : '' }, String(num)),
+  h('div', { class: 's-lbl' }, lbl)
+]);
