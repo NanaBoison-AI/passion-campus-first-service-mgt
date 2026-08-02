@@ -4,6 +4,7 @@ import { getGroup, loadMembers } from '../lib/store.js';
 import { getService, listServices } from '../api/attendance.js';
 import { downloadCSV } from '../lib/csv.js';
 import { todayKey, pct } from '../lib/format.js';
+import { mapHref } from '../lib/contact.js';
 
 export async function renderReview({ groupId }) {
   const g = await getGroup(groupId);
@@ -72,13 +73,20 @@ export async function renderReview({ groupId }) {
     const rows = current[tab];
     clear(listEl);
     if (!rows.length) { listEl.append(empty(tab === 'present' ? 'Nobody recorded present.' : 'No absentees 🎉')); return; }
-    rows.forEach((m) => listEl.append(h('div', { class: 'person' }, [
-      avatar(m.name),
-      h('div', { class: 'p-main' }, [
-        h('div', { class: 'p-name' }, m.name),
-        h('div', { class: 'p-sub' }, [m.residence, m.contact].filter(Boolean).join(' · ') || '—')
-      ])
-    ])));
+    rows.forEach((m) => {
+      const map = mapHref(m.location);
+      listEl.append(h('div', { class: 'person' }, [
+        avatar(m.name),
+        h('div', { class: 'p-main' }, [
+          h('div', { class: 'p-name' }, m.name),
+          h('div', { class: 'p-sub' }, [m.residence, m.contact].filter(Boolean).join(' · ') || '—')
+        ]),
+        map ? h('a', {
+          class: 'map-btn', href: map, target: '_blank', rel: 'noopener',
+          title: 'Directions to ' + m.name, 'aria-label': 'Open location for ' + m.name
+        }, '📍') : null
+      ]));
+    });
   }
 
   function exportDay() {

@@ -2,6 +2,7 @@ import { h, avatar, empty, toast, clear } from '../lib/dom.js';
 import { setAppbar, openSheet } from '../lib/ui.js';
 import { loadMembers, invalidateMembers, getGroup } from '../lib/store.js';
 import { addMember, updateMember } from '../api/sheets.js';
+import { telHref, mapHref } from '../lib/contact.js';
 
 const STATUSES = ['Active', 'Inactive', 'Visitor'];
 const GENDERS = ['', 'Male', 'Female', 'Other'];
@@ -140,24 +141,3 @@ const stat = (num, lbl, color) => h('div', { class: 'stat' }, [
   h('div', { class: 's-num', style: color ? `color:${color}` : '' }, String(num)),
   h('div', { class: 's-lbl' }, lbl)
 ]);
-
-/** Build a tel: link from a contact field that may hold multiple numbers. */
-function telHref(contact) {
-  const first = String(contact || '').split(/[\/,;]+/)[0]; // dial the first number listed
-  const cleaned = first.replace(/[^\d+]/g, '');
-  return cleaned.replace(/[^\d]/g, '').length >= 6 ? 'tel:' + cleaned : '';
-}
-
-/**
- * Turn a stored location into a Google Maps URL (no API / billing needed).
- *  - a pasted Maps link (http/https, incl. maps.app.goo.gl) → opened as-is
- *  - "lat,lng" coordinates → universal Maps URL that deep-links the app
- *  - any other text (an address) → treated as a Maps search query
- * On mobile these open the Google Maps app; otherwise the browser.
- */
-function mapHref(location) {
-  const v = String(location || '').trim();
-  if (!v) return '';
-  if (/^https?:\/\//i.test(v)) return v;
-  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(v);
-}
