@@ -8,13 +8,13 @@ export function telHref(contact) {
 }
 
 /**
- * Google Maps URL from a stored location (no API / billing):
- *  - a pasted Maps link (http/https) → opened as-is
- *  - "lat,lng" or an address → universal Maps URL that deep-links the app
+ * Google Maps URL (no API / billing). Prefers a pasted Maps link; otherwise
+ * builds a universal Maps URL from "lat,lng" coordinates. Both open the Maps
+ * app on mobile / the browser on desktop.
  */
-export function mapHref(location) {
-  const v = String(location || '').trim();
-  if (!v) return '';
-  if (/^https?:\/\//i.test(v)) return v;
-  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(v);
+export function mapHref(mapLink, coords) {
+  const link = String(mapLink || '').trim();
+  if (/^https?:\/\//i.test(link)) return link;
+  const query = String(coords || '').trim() || link;
+  return query ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query) : '';
 }

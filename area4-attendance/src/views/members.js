@@ -43,7 +43,7 @@ export async function renderMembers({ groupId }) {
   function memberRow(m) {
     const sub = [m.residence, m.contact].filter(Boolean).join(' · ') || '—';
     const tel = telHref(m.contact);
-    const map = mapHref(m.location);
+    const map = mapHref(m.mapLink, m.location);
     return h('div', { class: 'person tap', onClick: () => openForm(m) }, [
       avatar(m.name),
       h('div', { class: 'p-main' }, [
@@ -93,7 +93,8 @@ export async function renderMembers({ groupId }) {
         mk('Name *', 'name', { ph: 'Full name' }),
         mk('Contact', 'contact', { ph: 'Phone number(s)', type: 'tel' }),
         mk('Residence', 'residence', { ph: 'Area / landmark' }),
-        mk('Location (Google Maps link or lat,lng)', 'location', { ph: 'Paste a Maps link or 5.6037,-0.1870' }),
+        mk('Location (lat, lng)', 'location', { ph: '5.6037, -0.1870' }),
+        mk('Google Maps link', 'mapLink', { ph: 'https://maps.app.goo.gl/…' }),
         h('div', { class: 'row-2' }, [mk('Gender', 'gender', { type: 'select', options: GENDERS }),
           mk('Status', 'status', { type: 'select', options: STATUSES })]),
         mk('Notes', 'notes', { ph: 'Optional' })
@@ -105,7 +106,8 @@ export async function renderMembers({ groupId }) {
       const payload = {
         id: m.id, groupId,
         name: f.name.value.trim(), contact: f.contact.value.trim(),
-        residence: f.residence.value.trim(), location: f.location.value.trim(),
+        residence: f.residence.value.trim(),
+        location: f.location.value.trim(), mapLink: f.mapLink.value.trim(),
         gender: f.gender.value, status: f.status.value, notes: f.notes.value.trim()
       };
       if (!payload.name) { toast('Name is required', 'err'); return; }

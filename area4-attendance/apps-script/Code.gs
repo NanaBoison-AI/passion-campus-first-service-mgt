@@ -36,7 +36,8 @@ var FIELD_ALIASES = {
   residence: ['RESIDENCE', 'ADDRESS', 'LOCATION', 'AREA', 'HOUSE ADDRESS'],
   gender: ['GENDER', 'SEX'],
   status: ['STATUS', 'MEMBERSHIP STATUS'],
-  location: ['LOCATION', 'GPS', 'COORDINATES', 'COORDS', 'MAP', 'MAP LINK', 'MAPS', 'GOOGLE MAPS', 'GEO'],
+  location: ['LOCATION', 'GPS', 'COORDINATES', 'COORDS', 'GEO', 'LATLNG', 'LAT_LNG', 'LAT/LNG'],
+  mapLink: ['MAP_LINK', 'MAP LINK', 'MAPLINK', 'GOOGLE MAPS', 'GOOGLE MAP', 'MAPS LINK', 'MAP URL', 'MAPS', 'MAP'],
   dateJoined: ['DATE_JOINED', 'DATE JOINED', 'JOINED', 'JOIN DATE'],
   notes: ['NOTES', 'NOTE', 'REMARKS', 'COMMENT', 'COMMENTS']
 };
@@ -138,6 +139,7 @@ function getMembers(groupId) {
       contact: cols.contact >= 0 ? row[cols.contact] : '',
       residence: cols.residence >= 0 ? row[cols.residence] : '',
       location: cols.location >= 0 ? row[cols.location] : '',
+      mapLink: cols.mapLink >= 0 ? row[cols.mapLink] : '',
       gender: cols.gender >= 0 ? row[cols.gender] : '',
       status: (cols.status >= 0 ? row[cols.status] : '') || 'Active',
       dateJoined: cols.dateJoined >= 0 ? row[cols.dateJoined] : '',
@@ -153,6 +155,7 @@ function addMember(m) {
   var tab = membersTabFor_(m.groupId);
   var cols = ensureMemberIds_(tab);
   if (String(m.location || '').trim() && cols.location < 0) cols.location = addColumn_(tab, 'LOCATION');
+  if (String(m.mapLink || '').trim() && cols.mapLink < 0) cols.mapLink = addColumn_(tab, 'MAP_LINK');
   var width = Math.max(tab.getLastColumn(), highestIndex_(cols) + 1);
   var rowArr = new Array(width).fill('');
   rowArr[cols.id] = 'MEM-' + Utilities.getUuid().substring(0, 8);
@@ -160,6 +163,7 @@ function addMember(m) {
   setIf_(rowArr, cols.contact, m.contact);
   setIf_(rowArr, cols.residence, m.residence);
   setIf_(rowArr, cols.location, m.location);
+  setIf_(rowArr, cols.mapLink, m.mapLink);
   setIf_(rowArr, cols.gender, m.gender);
   setIf_(rowArr, cols.status, m.status || 'Active');
   if (cols.dateJoined >= 0) rowArr[cols.dateJoined] = m.dateJoined ||
@@ -175,6 +179,7 @@ function updateMember(m) {
   var tab = membersTabFor_(m.groupId);
   var cols = ensureMemberIds_(tab);
   if (String(m.location || '').trim() && cols.location < 0) cols.location = addColumn_(tab, 'LOCATION');
+  if (String(m.mapLink || '').trim() && cols.mapLink < 0) cols.mapLink = addColumn_(tab, 'MAP_LINK');
   var values = tab.getDataRange().getValues();
   for (var r = 1; r < values.length; r++) {
     if (String(values[r][cols.id]) === String(m.id)) {
@@ -183,6 +188,7 @@ function updateMember(m) {
       updCell_(tab, rowNum, cols.contact, m.contact);
       updCell_(tab, rowNum, cols.residence, m.residence);
       updCell_(tab, rowNum, cols.location, m.location);
+      updCell_(tab, rowNum, cols.mapLink, m.mapLink);
       updCell_(tab, rowNum, cols.gender, m.gender);
       updCell_(tab, rowNum, cols.status, m.status || 'Active');
       updCell_(tab, rowNum, cols.notes, m.notes);
