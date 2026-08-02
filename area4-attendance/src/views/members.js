@@ -25,8 +25,7 @@ export async function renderMembers({ groupId }) {
     totalsEl.append(h('div', { class: 'stat-grid' }, [
       stat(total, 'Total'),
       stat(by('Active'), 'Active', 'var(--green)'),
-      stat(by('Inactive'), 'Inactive', 'var(--red)'),
-      stat(by('Visitor'), 'Visitors', 'var(--amber)')
+      stat(by('Inactive'), 'Inactive', 'var(--red)')
     ]));
   }
 
