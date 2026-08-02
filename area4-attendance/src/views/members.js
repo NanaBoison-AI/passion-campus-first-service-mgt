@@ -41,13 +41,20 @@ export async function renderMembers({ groupId }) {
 
   function memberRow(m) {
     const sub = [m.residence, m.contact].filter(Boolean).join(' · ') || '—';
+    const tel = telHref(m.contact);
     return h('div', { class: 'person tap', onClick: () => openForm(m) }, [
       avatar(m.name),
       h('div', { class: 'p-main' }, [
         h('div', { class: 'p-name' }, m.name),
         h('div', { class: 'p-sub' }, sub)
       ]),
-      statusChip(m.status)
+      statusChip(m.status),
+      tel
+        ? h('a', {
+            class: 'call-btn', href: tel, title: 'Call ' + m.name, 'aria-label': 'Call ' + m.name,
+            onClick: (e) => e.stopPropagation()
+          }, '📞')
+        : null
     ]);
   }
 
@@ -124,3 +131,10 @@ const stat = (num, lbl, color) => h('div', { class: 'stat' }, [
   h('div', { class: 's-num', style: color ? `color:${color}` : '' }, String(num)),
   h('div', { class: 's-lbl' }, lbl)
 ]);
+
+/** Build a tel: link from a contact field that may hold multiple numbers. */
+function telHref(contact) {
+  const first = String(contact || '').split(/[\/,;]+/)[0]; // dial the first number listed
+  const cleaned = first.replace(/[^\d+]/g, '');
+  return cleaned.replace(/[^\d]/g, '').length >= 6 ? 'tel:' + cleaned : '';
+}
