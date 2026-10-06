@@ -53,28 +53,59 @@ export async function pushSoul(entry) {
   });
 }
 
-/** Admin-only: sign in and fetch every soul. Used by the hidden CSV export. */
-export async function fetchAllSouls(email, password) {
-  const { app, db, fs } = await init();
+/** Sign in as admin, run fn(ctx), then always sign out again. */
+async function asAdmin(email, password, fn) {
+  const ctx = await init();
   const auth = await import(SDK + "firebase-auth.js");
-  const a = auth.getAuth(app);
+  const a = auth.getAuth(ctx.app);
   await auth.signInWithEmailAndPassword(a, email, password);
   try {
-    const snap = await fs.getDocs(fs.query(fs.collection(db, "souls"), fs.orderBy("createdAt")));
-    return snap.docs.map((d) => {
-      const x = d.data();
-      return {
-        id: d.id,
-        name: x.name,
-        phone: x.phone,
-        location: x.location,
-        mapLink: x.mapLink,
-        recordedBy: x.recordedBy,
-        capturedAt: x.capturedAt,
-        savedAt: x.createdAt && x.createdAt.toDate ? x.createdAt.toDate().toISOString() : "",
-      };
-    });
+    return await fn(ctx);
   } finally {
     await auth.signOut(a);
   }
+}
+
+const iso = (ts) => (ts && ts.toDate ? ts.toDate().toISOString() : "");
+
+/** Admin-only: every soul plus every "outside the app" addition, oldest first. Used by the CSV export. */
+export function fetchAllSouls(email, password) {
+  return asAdmin(email, password, async ({ db, fs }) => {
+    const [souls, outside] = await Promise.all([
+      fs.getDocs(fs.query(fs.collection(db, "souls"), fs.orderBy("createdAt"))),
+      fs.getDocs(fs.query(fs.collection(db, "outside"), fs.orderBy("createdAt"))),
+    ]);
+    const rows = [
+      ...souls.docs.map((d) => {
+        const x = d.data();
+        return {
+          id: d.id, count: 1, name: x.name, phone: x.phone, location: x.location, mapLink: x.mapLink,
+          recordedBy: x.recordedBy, capturedAt: x.capturedAt, savedAt: iso(x.createdAt),
+        };
+      }),
+      ...outside.docs.map((d) => {
+        const x = d.data();
+        return {
+          id: d.id, count: x.count, name: "Outside the app", phone: "", location: x.note || "", mapLink: "",
+          recordedBy: "Admin", capturedAt: "", savedAt: iso(x.createdAt),
+        };
+      }),
+    ];
+    return rows.sort((p, q) => p.savedAt.localeCompare(q.savedAt));
+  });
+}
+
+/**
+ * Admin-only: add souls won outside the app to the total (a negative number corrects a mistake).
+ * `id` is generated once per submission so retrying after a dropped connection can't count twice.
+ */
+export function addOutsideCount(email, password, { id, count, note }) {
+  return asAdmin(email, password, ({ db, fs }) =>
+    fs.runTransaction(db, async (tx) => {
+      const ref = fs.doc(db, "outside", id);
+      if ((await tx.get(ref)).exists()) return; // already added
+      tx.set(ref, { count, note, createdAt: fs.serverTimestamp() });
+      tx.set(fs.doc(db, "stats", "total"), { total: fs.increment(count) }, { merge: true });
+    })
+  );
 }

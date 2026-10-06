@@ -29,13 +29,32 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Souls won outside the app, entered by the admin. Each one also adds to stats/total.
+    match /outside/{entryId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['count', 'note', 'createdAt'])
+        && request.resource.data.count is int
+        && request.resource.data.count != 0
+        && request.resource.data.count >= -100000 && request.resource.data.count <= 100000
+        && request.resource.data.note is string && request.resource.data.note.size() <= 200
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
     // Running total across all users, shown on the home screen.
     match /stats/total {
       allow read: if true;
+      // anyone: +1 when a soul is saved
       allow create: if request.resource.data.keys().hasOnly(['total'])
                     && request.resource.data.total == 1;
       allow update: if request.resource.data.keys().hasOnly(['total'])
                     && request.resource.data.total == resource.data.total + 1;
+      // admin: any non-negative total (outside-the-app additions / corrections)
+      allow create, update: if isAdmin()
+                    && request.resource.data.keys().hasOnly(['total'])
+                    && request.resource.data.total is int
+                    && request.resource.data.total >= 0;
     }
   }
 }

@@ -1,4 +1,4 @@
-import { isConfigured, subscribeTotal, pushSoul, fetchAllSouls } from "./sync.js";
+import { isConfigured, subscribeTotal, pushSoul, fetchAllSouls, addOutsideCount } from "./sync.js";
 
 /* ------------------------------------------------------------------ *
  * Local storage (the copy kept on this phone)
@@ -345,7 +345,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 /* ------------------------------------------------------------------ *
- * Hidden export: tap the total 10 times
+ * Hidden admin tools (export + add outside souls): tap the total 10 times
  * ------------------------------------------------------------------ */
 const TAPS_NEEDED = 10;
 const TAP_GAP_MS = 2500;
@@ -359,48 +359,80 @@ $("total").addEventListener("click", () => {
   if (taps >= TAPS_NEEDED) {
     taps = 0;
     store.set(K_ADMIN, true);
-    $("export").hidden = false;
+    showAdminTools();
   }
 });
-$("export").hidden = !store.get(K_ADMIN, false);
+function showAdminTools() { $("export").hidden = false; $("outside").hidden = false; }
+if (store.get(K_ADMIN, false)) showAdminTools();
 
-$("export").addEventListener("click", () => {
+let adminMode = "export"; // "export" | "outside"
+let outsideId = null;     // one id per submission so a retry can't add the amount twice
+
+function openAdmin(mode) {
+  adminMode = mode;
+  const outside = mode === "outside";
+  $("a-title").textContent = outside ? "Add outside souls" : "Export all data";
+  $("a-sub").textContent = outside
+    ? "Enter how many souls were won outside the app. It is added to the total for everyone. Use a negative number to correct a mistake."
+    : "Sign in with the admin account to download every soul won as a CSV file.";
+  $("a-outside").hidden = !outside;
+  $("a-go").textContent = outside ? "Add to total" : "Export";
   $("e-a").textContent = "";
+  $("e-amt").textContent = "";
+  $("a-amount").removeAttribute("aria-invalid");
+  outsideId = outside ? uuid() : null;
   $("admin").hidden = false;
-  $("a-email").focus();
-});
+  $(outside ? "a-amount" : "a-email").focus();
+}
+$("export").addEventListener("click", () => openAdmin("export"));
+$("outside").addEventListener("click", () => openAdmin("outside"));
 $("a-cancel").addEventListener("click", () => { $("admin").hidden = true; $("a-pass").value = ""; });
 
 $("a-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = $("a-email").value.trim();
   const pass = $("a-pass").value;
+  const outside = adminMode === "outside";
+  let amount = 0;
+  if (outside) {
+    const raw = $("a-amount").value.trim();
+    amount = Number(raw);
+    const bad = !raw || !Number.isInteger(amount) || amount === 0 || Math.abs(amount) > 100000;
+    if (!setErr("a-amount", "e-amt", bad ? "Enter a whole number (not 0)." : "")) { $("a-amount").focus(); return; }
+  }
   if (!email || !pass) { $("e-a").textContent = "Enter the admin email and password."; return; }
   if (!isConfigured) { $("e-a").textContent = "Firebase isn't set up yet."; return; }
   if (!navigator.onLine) { $("e-a").textContent = "You're offline."; return; }
 
   const go = $("a-go");
   go.disabled = true;
-  go.textContent = "Exporting…";
+  go.textContent = outside ? "Adding…" : "Exporting…";
   $("e-a").textContent = "";
   try {
-    const rows = await fetchAllSouls(email, pass);
-    downloadCsv(rows);
+    if (outside) {
+      await addOutsideCount(email, pass, { id: outsideId, count: amount, note: $("a-note").value.trim() });
+      $("a-amount").value = "";
+      $("a-note").value = "";
+      toast(`${amount > 0 ? "Added" : "Removed"} ${Math.abs(amount).toLocaleString()} ${amount > 0 ? "to" : "from"} the total`);
+    } else {
+      const rows = await fetchAllSouls(email, pass);
+      downloadCsv(rows);
+      toast(`Exported ${rows.reduce((n, r) => n + r.count, 0).toLocaleString()} souls`);
+    }
     $("admin").hidden = true;
     $("a-pass").value = "";
-    toast(`Exported ${rows.length} souls`);
   } catch (err) {
     const code = err && err.code ? String(err.code) : "";
     $("e-a").textContent =
       code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found")
         ? "Wrong email or password."
         : code.includes("permission-denied")
-          ? "This account isn't allowed to export."
-          : "Export failed. Check your connection and try again.";
+          ? "This account isn't allowed to do that."
+          : "That didn't work. Check your connection and try again.";
     console.warn(err);
   } finally {
     go.disabled = false;
-    go.textContent = "Export";
+    go.textContent = outside ? "Add to total" : "Export";
   }
 });
 
@@ -413,7 +445,7 @@ function csvCell(v) {
 
 function downloadCsv(rows) {
   const cols = [
-    ["Name", "name"], ["Phone", "phone"], ["Location", "location"], ["Location link", "mapLink"],
+    ["Count", "count"], ["Name", "name"], ["Phone", "phone"], ["Location", "location"], ["Location link", "mapLink"],
     ["Recorded by", "recordedBy"], ["Date recorded (phone)", "capturedAt"], ["Date saved (server)", "savedAt"], ["ID", "id"],
   ];
   const lines = [cols.map((c) => csvCell(c[0])).join(",")];

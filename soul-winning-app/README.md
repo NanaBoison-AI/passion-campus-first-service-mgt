@@ -10,9 +10,12 @@ plain HTML/CSS/JS served as static files, with **Firebase Firestore** as the dat
   and a map button when a location was entered.
 - **Offline-safe:** every entry is saved on the phone first, then uploaded. If there's no signal it
   is uploaded automatically later ("n waiting to upload" is shown). Retrying never double-counts.
-- **Hidden CSV export:** tap the big total **10 times** (taps must be within 2.5 s of each other).
-  An *Export CSV* button appears (and stays on that phone). It asks for the admin email/password
-  and downloads every soul as a CSV.
+- **Hidden admin tools:** tap the big total **10 times** (taps must be within 2.5 s of each other).
+  Two buttons appear (and stay on that phone):
+  - **Add outside souls** — enter a number of souls won outside the app (plus an optional note).
+    It is added to the total everyone sees. Use a negative number to correct a mistake.
+  - **Export CSV** — downloads every soul and every outside addition.
+  Both ask for the admin email/password each time.
 
 ## Configuration values
 
@@ -45,7 +48,7 @@ export dialog each time.
 ### 3. Firebase services that must be enabled
 
 - **Firestore Database** (production mode). Collections are created automatically on first write:
-  `souls/{uuid}` and `stats/total`.
+  `souls/{uuid}`, `outside/{uuid}` (admin's outside-the-app additions) and `stats/total`.
 - **Authentication -> Email/Password** provider, with one user (the admin). Recommended: turn off
   "Enable create (sign-up)" so nobody else can register.
 - Publish `firestore.rules` after filling in the admin UID.
@@ -72,6 +75,12 @@ that needs a small build step to generate `firebase-config.js`; say so and it ca
 - The total is a counter document (`stats/total`) incremented together with each soul, so reading it
   costs one read no matter how many souls exist. Because there's no login, the rules can't stop a
   determined person from bumping it; the CSV export (real data) is the source of truth.
+- **CSV export:** one row per soul (`Count` = 1) plus one row per outside addition (`Name` = "Outside the app",
+  `Count` = the amount, note in `Location`). The `Count` column adds up to the total on the home screen.
+- Outside additions are saved in the same step as the total update, and each has a unique id, so a retry after
+  a dropped connection can't add the amount twice. They can't be edited; to fix a mistake, add a negative amount.
+- If you already published `firestore.rules`, **publish the updated version** — the admin outside-souls feature
+  needs the new `outside` and `stats/total` rules.
 - Entries can't be edited or deleted in the app (the local list and the server would drift apart).
 - Normal edits are picked up automatically (the service worker is network-first). Only bump `CACHE`
   in `sw.js` if you add or remove files in its `SHELL` list.

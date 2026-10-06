@@ -48,6 +48,7 @@
     <p id="ios-hint" class="hint" hidden>To install: tap <b>Share</b>, then <b>Add to Home Screen</b>.</p>
 
     <footer class="home-foot">
+      <button id="outside" class="chip chip-red" type="button" hidden>Add outside souls</button>
       <button id="export" class="chip chip-red" type="button" hidden>Export CSV</button>
     </footer>
   </main>
@@ -133,7 +134,18 @@
   <div id="admin" class="overlay" role="dialog" aria-modal="true" aria-labelledby="a-title" hidden>
     <form id="a-form" class="sheet" novalidate>
       <h2 id="a-title">Export all data</h2>
-      <p>Sign in with the admin account to download every soul won as a CSV file.</p>
+      <p id="a-sub">Sign in with the admin account to download every soul won as a CSV file.</p>
+      <div id="a-outside" class="grid" hidden>
+        <label class="field">
+          <span>Souls won outside the app</span>
+          <input id="a-amount" type="number" step="1" min="-100000" max="100000" placeholder="e.g. 25">
+          <small class="err" id="e-amt"></small>
+        </label>
+        <label class="field">
+          <span>Note <em>optional</em></span>
+          <input id="a-note" type="text" maxlength="200" placeholder="e.g. Street outreach, Saturday">
+        </label>
+      </div>
       <label class="field">
         <span>Admin email</span>
         <input id="a-email" type="email" autocomplete="username" autocapitalize="off" required>

@@ -95,7 +95,8 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
   font-size: 14px; font-weight: 700; text-align: center;
 }
 .hint { text-align: center; color: var(--muted); font-size: 14px; margin: 16px 0 0; }
-.home-foot { margin-top: auto; padding-top: 28px; text-align: center; }
+.home-foot { margin-top: auto; padding-top: 28px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+.grid { display: grid; gap: 14px; }
 
 /* ---------- Sub-screen bar ---------- */
 .bar {
