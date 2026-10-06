@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Only the admin account (the one used for the hidden CSV export) can list/read all data.
+    // Replace with the UID of the admin user from Firebase console -> Authentication -> Users.
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'REPLACE_WITH_ADMIN_UID';
+    }
+
+    function validSoul(d) {
+      return d.keys().hasOnly(['name', 'phone', 'location', 'mapLink', 'recordedBy', 'capturedAt', 'createdAt'])
+        && d.keys().hasAll(['name', 'phone', 'location', 'mapLink', 'recordedBy', 'capturedAt', 'createdAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
+        && d.phone is string && d.phone.size() >= 5 && d.phone.size() <= 30
+        && d.location is string && d.location.size() <= 300
+        && d.mapLink is string && d.mapLink.size() <= 1000
+        && d.recordedBy is string && d.recordedBy.size() > 0 && d.recordedBy.size() <= 120
+        && d.capturedAt is string && d.capturedAt.size() <= 40
+        && d.createdAt == request.time;
+    }
+
+    // One document per soul won. The app generates the id (a UUID) on the phone,
+    // so a retried upload can never create a duplicate.
+    match /souls/{soulId} {
+      allow get: if true;            // needed so an upload can check "already saved?" (ids are unguessable)
+      allow list: if isAdmin();      // nobody else can read the list of names/phone numbers
+      allow create: if validSoul(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // Running total across all users, shown on the home screen.
+    match /stats/total {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['total'])
+                    && request.resource.data.total == 1;
+      allow update: if request.resource.data.keys().hasOnly(['total'])
+                    && request.resource.data.total == resource.data.total + 1;
+    }
+  }
+}

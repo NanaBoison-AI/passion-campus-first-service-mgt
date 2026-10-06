@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Soul Winning</title>
+  <meta name="description" content="Passion Campus soul winning tracker">
+  <meta name="theme-color" content="#14213d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Soul Winning">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- HOME -->
+  <main id="home" class="screen" aria-label="Home">
+    <header class="topbar">
+      <button id="who" class="who" type="button" aria-label="Change your name"></button>
+      <button id="install" class="chip" type="button" hidden>Install app</button>
+    </header>
+
+    <section class="hero">
+      <p class="hero-label">Souls won</p>
+      <button id="total" class="hero-number" type="button" aria-live="polite" aria-label="Total souls won">0</button>
+      <p id="status" class="hero-note"></p>
+    </section>
+
+    <nav class="actions">
+      <a class="btn btn-primary" href="#add">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Add soul won
+      </a>
+      <a class="btn btn-secondary" href="#view">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+        Review souls won
+        <span id="mine-badge" class="badge" hidden></span>
+      </a>
+    </nav>
+
+    <p id="ios-hint" class="hint" hidden>To install: tap <b>Share</b>, then <b>Add to Home Screen</b>.</p>
+
+    <footer class="home-foot">
+      <button id="export" class="chip chip-gold" type="button" hidden>Export CSV</button>
+    </footer>
+  </main>
+
+  <!-- ADD -->
+  <main id="add" class="screen" aria-label="Add soul won" hidden>
+    <header class="bar">
+      <a class="back" href="#home" aria-label="Back">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      </a>
+      <h1>Add soul won</h1>
+    </header>
+
+    <form id="form" class="form" novalidate autocomplete="off">
+      <label class="field">
+        <span>Name of soul</span>
+        <input id="f-name" name="name" type="text" maxlength="120" autocapitalize="words" enterkeyhint="next" required>
+        <small class="err" id="e-name"></small>
+      </label>
+
+      <label class="field">
+        <span>Phone number</span>
+        <input id="f-phone" name="phone" type="tel" inputmode="tel" maxlength="30" enterkeyhint="next" required>
+        <small class="err" id="e-phone"></small>
+      </label>
+
+      <label class="field">
+        <span>Location <em>optional</em></span>
+        <input id="f-location" name="location" type="text" maxlength="300" placeholder="Where do they stay?" enterkeyhint="next">
+      </label>
+
+      <label class="field">
+        <span>Location link <em>optional</em></span>
+        <input id="f-map" name="map" type="text" inputmode="url" maxlength="1000" placeholder="Paste a Google Maps link" autocapitalize="off" enterkeyhint="done">
+        <small class="err" id="e-map"></small>
+      </label>
+
+      <p class="by">Recorded by <b id="by-name"></b></p>
+
+      <button class="btn btn-primary" type="submit">Save soul won</button>
+    </form>
+  </main>
+
+  <!-- VIEW -->
+  <main id="view" class="screen" aria-label="Souls won" hidden>
+    <header class="bar">
+      <a class="back" href="#home" aria-label="Back">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      </a>
+      <h1>Souls won</h1>
+    </header>
+
+    <div class="tools">
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Search name, phone or location" enterkeyhint="search" aria-label="Search souls won" autocomplete="off">
+      </label>
+      <p id="count" class="count" aria-live="polite"></p>
+    </div>
+
+    <ul id="list" class="list"></ul>
+    <p id="empty" class="empty" hidden></p>
+  </main>
+
+  <!-- NAME (first run / change) -->
+  <div id="welcome" class="overlay" role="dialog" aria-modal="true" aria-labelledby="w-title" hidden>
+    <form id="w-form" class="sheet" novalidate>
+      <h2 id="w-title">Welcome</h2>
+      <p id="w-sub">Enter your name once. It will be saved with every soul you record.</p>
+      <label class="field">
+        <span>Your name</span>
+        <input id="w-name" type="text" maxlength="120" autocapitalize="words" autocomplete="name" required>
+        <small class="err" id="e-w"></small>
+      </label>
+      <div class="row">
+        <button id="w-cancel" class="btn btn-ghost" type="button" hidden>Cancel</button>
+        <button class="btn btn-primary" type="submit">Continue</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ADMIN EXPORT -->
+  <div id="admin" class="overlay" role="dialog" aria-modal="true" aria-labelledby="a-title" hidden>
+    <form id="a-form" class="sheet" novalidate>
+      <h2 id="a-title">Export all data</h2>
+      <p>Sign in with the admin account to download every soul won as a CSV file.</p>
+      <label class="field">
+        <span>Admin email</span>
+        <input id="a-email" type="email" autocomplete="username" autocapitalize="off" required>
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input id="a-pass" type="password" autocomplete="current-password" required>
+        <small class="err" id="e-a"></small>
+      </label>
+      <div class="row">
+        <button id="a-cancel" class="btn btn-ghost" type="button">Cancel</button>
+        <button id="a-go" class="btn btn-primary" type="submit">Export</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
