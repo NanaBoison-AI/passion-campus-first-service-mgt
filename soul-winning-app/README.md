@@ -1,4 +1,4 @@
-# Soul Winning Tracker
+# Soul Winning Tracker — First Love Church - Passion Campus
 
 A tiny installable phone app (PWA) for recording souls won. No login, no build step —
 plain HTML/CSS/JS served as static files, with **Firebase Firestore** as the database.

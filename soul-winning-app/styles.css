@@ -1,15 +1,15 @@
 :root {
-  --navy: #14213d;
-  --navy-2: #1d2f57;
-  --gold: #f4b942;
-  --gold-ink: #3b2a00;
-  --bg: #f6f3ec;
+  --red: #c8102e;
+  --red-2: #e0283f;
+  --red-dark: #8f0b20;
+  --on-red-soft: #ffd9de;
+  --bg: #ffffff;
   --card: #ffffff;
-  --ink: #1b2233;
-  --muted: #667085;
-  --line: #e4dfd2;
+  --ink: #1f1517;
+  --muted: #6e5f62;
+  --line: #ecd6d9;
+  --tint: #fff4f5;
   --danger: #b42318;
-  --ok: #067647;
   --radius: 16px;
   --gutter: 16px;
 }
@@ -28,7 +28,7 @@ body {
 [hidden] { display: none !important; }
 button, input { font: inherit; color: inherit; }
 svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
 
 .screen {
   min-height: 100vh;
@@ -39,8 +39,12 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 }
 
 /* ---------- Home ---------- */
+.brand { display: flex; align-items: center; gap: 12px; padding: 18px 2px 6px; }
+.brand-mark { width: 44px; height: 44px; flex: none; border-radius: 12px; background: var(--red); color: #fff; display: grid; place-items: center; }
+.brand-mark svg { width: 26px; height: 26px; stroke-width: 2.6; }
+.brand h1 { margin: 0; font-size: 19px; line-height: 1.2; letter-spacing: -.01em; color: var(--red); font-weight: 800; text-wrap: balance; }
 #home { display: flex; flex-direction: column; }
-.topbar { display: flex; justify-content: space-between; align-items: center; min-height: 64px; gap: 8px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; min-height: 52px; gap: 8px; }
 .who {
   background: none; border: 0; padding: 10px 4px; min-height: 44px;
   color: var(--muted); font-size: 15px; cursor: pointer; text-align: left;
@@ -50,20 +54,20 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
   border: 1px solid var(--line); background: var(--card); border-radius: 999px;
   padding: 9px 16px; min-height: 40px; font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.chip-gold { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+.chip-red { background: var(--red); border-color: var(--red); color: #fff; }
 
 .hero {
-  background: radial-gradient(120% 90% at 50% 0%, var(--navy-2) 0%, var(--navy) 70%);
+  background: radial-gradient(120% 90% at 50% 0%, var(--red-2) 0%, var(--red) 55%, var(--red-dark) 100%);
   color: #fff;
   border-radius: 28px;
   padding: 28px 20px 24px;
   text-align: center;
   margin-top: 4px;
-  box-shadow: 0 18px 40px -22px rgba(20, 33, 61, .7);
+  box-shadow: 0 18px 40px -22px rgba(143, 11, 32, .55);
 }
 .hero-label {
   margin: 0; font-size: 14px; letter-spacing: .22em; text-transform: uppercase;
-  color: var(--gold); font-weight: 700;
+  color: var(--on-red-soft); font-weight: 700;
 }
 .hero-number {
   display: block; width: 100%; margin: 6px 0 2px; padding: 0; border: 0; background: none;
@@ -83,11 +87,11 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
   text-decoration: none; cursor: pointer; transition: transform .08s ease, background-color .15s ease;
 }
 .btn:active { transform: scale(.98); }
-.btn-primary { background: var(--gold); color: var(--gold-ink); }
-.btn-secondary { background: var(--card); color: var(--navy); border-color: var(--navy); }
+.btn-primary { background: var(--red); color: #fff; }
+.btn-secondary { background: #fff; color: var(--red); border-color: var(--red); }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--line); }
 .badge {
-  min-width: 26px; padding: 2px 8px; border-radius: 999px; background: var(--navy); color: #fff;
+  min-width: 26px; padding: 2px 8px; border-radius: 999px; background: var(--red); color: #fff;
   font-size: 14px; font-weight: 700; text-align: center;
 }
 .hint { text-align: center; color: var(--muted); font-size: 14px; margin: 16px 0 0; }
@@ -102,21 +106,21 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .bar h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
 .back {
   display: grid; place-items: center; width: 48px; height: 48px; margin-left: -10px;
-  border-radius: 50%; color: var(--navy); text-decoration: none;
+  border-radius: 50%; color: var(--red); text-decoration: none;
 }
-.back:active { background: rgba(20, 33, 61, .08); }
+.back:active { background: rgba(200, 16, 46, .1); }
 
 /* ---------- Form ---------- */
 .form { display: grid; gap: 18px; padding-top: 8px; }
 .field { display: grid; gap: 6px; }
-.field > span { font-size: 14px; font-weight: 650; color: var(--navy); }
+.field > span { font-size: 14px; font-weight: 650; color: var(--red); }
 .field em { font-style: normal; font-weight: 500; color: var(--muted); margin-left: 4px; }
 .field input {
   width: 100%; min-height: 52px; padding: 12px 14px;
   border: 1.5px solid var(--line); border-radius: 12px; background: var(--card);
   font-size: 17px; /* >=16px stops iOS zooming on focus */
 }
-.field input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(244, 185, 66, .45); }
+.field input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(200, 16, 46, .22); }
 .field input[aria-invalid="true"] { border-color: var(--danger); }
 .err { color: var(--danger); font-size: 13px; min-height: 0; }
 .err:empty { display: none; }
@@ -126,7 +130,7 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 /* ---------- List ---------- */
 .tools { display: grid; gap: 8px; padding-bottom: 8px; position: sticky; top: calc(64px); background: var(--bg); z-index: 1; }
 .search { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 0 12px; }
-.search:focus-within { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(244, 185, 66, .45); }
+.search:focus-within { border-color: var(--red); box-shadow: 0 0 0 3px rgba(200, 16, 46, .22); }
 .search svg { color: var(--muted); width: 20px; height: 20px; }
 .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; min-height: 48px; font-size: 17px; }
 .count { margin: 0; font-size: 14px; color: var(--muted); }
@@ -145,19 +149,19 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .icons { display: flex; gap: 8px; align-self: start; }
 .icon-btn {
   display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%;
-  text-decoration: none; border: 1.5px solid var(--line); color: var(--navy); background: var(--bg);
+  text-decoration: none; border: 1.5px solid var(--line); color: var(--red); background: var(--tint);
 }
-.icon-btn.call { background: var(--navy); border-color: var(--navy); color: #fff; }
+.icon-btn.call { background: var(--red); border-color: var(--red); color: #fff; }
 .icon-btn:active { transform: scale(.94); }
 .empty { text-align: center; color: var(--muted); padding: 36px 8px; }
 
 /* ---------- Overlays / toast ---------- */
 .overlay {
-  position: fixed; inset: 0; z-index: 10; background: rgba(20, 33, 61, .6);
+  position: fixed; inset: 0; z-index: 10; background: rgba(60, 8, 16, .6);
   display: grid; align-items: end; justify-items: center; padding: 0;
 }
 .sheet {
-  width: 100%; max-width: 560px; background: var(--bg); border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 560px; background: #fff; border-radius: 24px 24px 0 0;
   padding: 24px var(--gutter) calc(24px + env(safe-area-inset-bottom)); display: grid; gap: 14px;
   max-height: 100dvh; overflow: auto;
 }
@@ -169,7 +173,7 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .toast {
   position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   max-width: min(92vw, 460px); padding: 12px 18px; border-radius: 999px; z-index: 20;
-  background: var(--navy); color: #fff; font-size: 15px; font-weight: 600; text-align: center;
+  background: #2a1a1d; color: #fff; font-size: 15px; font-weight: 600; text-align: center;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .5);
 }
 .toast.bad { background: var(--danger); }
