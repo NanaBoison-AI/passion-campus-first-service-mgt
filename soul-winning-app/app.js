@@ -371,7 +371,7 @@ let outsideId = null;     // one id per submission so a retry can't add the amou
 function openAdmin(mode) {
   adminMode = mode;
   const outside = mode === "outside";
-  $("a-title").textContent = outside ? "Add outside souls" : "Export all data";
+  $("a-title").textContent = outside ? "Add Outside Souls" : "Export all data";
   $("a-sub").textContent = outside
     ? "Enter how many souls were won outside the app. It is added to the total for everyone. Use a negative number to correct a mistake."
     : "Sign in with the admin account to download every soul won as a CSV file.";

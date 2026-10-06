@@ -12,7 +12,7 @@ plain HTML/CSS/JS served as static files, with **Firebase Firestore** as the dat
   is uploaded automatically later ("n waiting to upload" is shown). Retrying never double-counts.
 - **Hidden admin tools:** tap the big total **10 times** (taps must be within 2.5 s of each other).
   Two buttons appear (and stay on that phone):
-  - **Add outside souls** — enter a number of souls won outside the app (plus an optional note).
+  - **Add Outside Souls** — enter a number of souls won outside the app (plus an optional note).
     It is added to the total everyone sees. Use a negative number to correct a mistake.
   - **Export CSV** — downloads every soul and every outside addition.
   Both ask for the admin email/password each time.
