@@ -14,36 +14,58 @@ plain HTML/CSS/JS served as static files, with **Firebase Firestore** as the dat
   An *Export CSV* button appears (and stays on that phone). It asks for the admin email/password
   and downloads every soul as a CSV.
 
-## 1. Set up Firebase (one time)
+## Configuration values
 
-1. [Firebase console](https://console.firebase.google.com) → **Add project**.
-2. **Build → Firestore Database → Create database** (production mode, pick a region near you).
-3. **Build → Authentication → Get started → Sign-in method → Email/Password → Enable.**
-   Then **Users → Add user** with the email/password *you* will use for the export.
-   Copy that user's **User UID**.
-   (Optional but recommended: Authentication → Settings → User actions → turn **off** "Enable create (sign-up)".)
-4. **Firestore → Rules:** paste the contents of [`firestore.rules`](./firestore.rules), replace
-   `REPLACE_WITH_ADMIN_UID` with the UID from step 3, and **Publish**.
-5. **Project settings (gear) → General → Your apps → Web (`</>`)** → register an app, then copy the
-   `firebaseConfig` values into [`firebase-config.js`](./firebase-config.js).
+There is **no build step, so no Cloudflare Pages environment variables are used or needed.**
+Everything below is plain config that you paste into a file once. None of it is a secret
+(the Firebase web config ships to every browser by design; access is enforced by `firestore.rules`).
 
-Why the admin sign-in? There's no login for normal users, so the database rules are what keep
-everyone's names and phone numbers private: the app can *add* souls and read the total, but only
-the admin account can *list* the souls. Without this, anyone who opened the page source could
-download every phone number.
+### 1. Firebase web config -> `firebase-config.js`
 
-## 2. Deploy on Cloudflare Pages
+From Firebase console -> Project settings -> Your apps -> Web app -> SDK setup and configuration:
 
-1. Push this branch to GitHub.
-2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git** → pick the repo.
-3. Settings:
-   - **Production branch:** `pc-soul-winning`
-   - **Framework preset:** None
-   - **Build command:** *(leave empty)*
-   - **Build output directory:** `soul-winning-app`
-4. Deploy. Open the `*.pages.dev` URL on a phone:
-   - **Android (Chrome):** tap **Install app** on the home screen (or menu → *Install app*).
-   - **iPhone (Safari):** Share → **Add to Home Screen**.
+| Key in `firebase-config.js` | Firebase value | Required |
+| --- | --- | --- |
+| `apiKey` | `apiKey` | yes |
+| `authDomain` | `authDomain` (`<project-id>.firebaseapp.com`) | yes (used by the admin sign-in for the export) |
+| `projectId` | `projectId` | yes (the app stays in phone-only mode while this is still `YOUR_PROJECT_ID`) |
+| `appId` | `appId` | yes |
+
+`storageBucket`, `messagingSenderId` and `measurementId` are not used by this app.
+
+### 2. Admin UID -> `firestore.rules`
+
+| Placeholder | Where to get it |
+| --- | --- |
+| `REPLACE_WITH_ADMIN_UID` (in `isAdmin()`) | Firebase console -> Authentication -> Users -> the admin user's **User UID** |
+
+The admin email and password are **not stored anywhere in the code**. You type them into the hidden
+export dialog each time.
+
+### 3. Firebase services that must be enabled
+
+- **Firestore Database** (production mode). Collections are created automatically on first write:
+  `souls/{uuid}` and `stats/total`.
+- **Authentication -> Email/Password** provider, with one user (the admin). Recommended: turn off
+  "Enable create (sign-up)" so nobody else can register.
+- Publish `firestore.rules` after filling in the admin UID.
+
+### 4. Cloudflare Pages settings (no env vars)
+
+| Setting | Value |
+| --- | --- |
+| Production branch | `pc-soul-winning` |
+| Framework preset | None |
+| Build command | *(empty)* |
+| Build output directory | `soul-winning-app` |
+| Root directory | *(repo root)* |
+| Environment variables | *(none)* |
+
+Install on a phone from the `*.pages.dev` URL: Android Chrome -> **Install app**;
+iPhone Safari -> Share -> **Add to Home Screen**.
+
+If you later want these values to come from Pages environment variables instead of being committed,
+that needs a small build step to generate `firebase-config.js`; say so and it can be added.
 
 ## Notes & limits
 
