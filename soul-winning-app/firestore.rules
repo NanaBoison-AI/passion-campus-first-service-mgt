@@ -5,7 +5,7 @@ service cloud.firestore {
     // Only the admin account (the one used for the hidden CSV export) can list/read all data.
     // Replace with the UID of the admin user from Firebase console -> Authentication -> Users.
     function isAdmin() {
-      return request.auth != null && request.auth.uid == 'REPLACE_WITH_ADMIN_UID';
+      return request.auth != null && request.auth.uid == 'lev5E6KPZhXX3HgnfD9j4lDqR0g1';
     }
 
     function validSoul(d) {
