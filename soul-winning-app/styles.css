@@ -146,6 +146,7 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .item .phone { margin: 0; color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
 .item .loc { margin: 2px 0 0; color: var(--ink); font-size: 14px; overflow-wrap: anywhere; }
 .item .meta { margin: 4px 0 0; color: var(--muted); font-size: 12.5px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rec { color: var(--red); font-weight: 600; }
 .pending { color: #92400e; background: #fef3c7; border-radius: 999px; padding: 1px 8px; font-weight: 600; }
 .icons { display: flex; gap: 8px; align-self: start; }
 .icon-btn {

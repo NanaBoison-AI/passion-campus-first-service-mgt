@@ -77,16 +77,20 @@ const PIN_ICON = ["M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z", "M
 /* ------------------------------------------------------------------ *
  * Routing: #home, #add, #view
  * ------------------------------------------------------------------ */
-const SCREENS = ["home", "add", "view"];
+const SCREENS = ["home", "add", "view", "all"];
+let allRows = null; // admin only: everything from the server. Kept in memory, never written to the phone.
 
 function route() {
   const name = SCREENS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   for (const s of SCREENS) $(s).hidden = s !== name;
   window.scrollTo(0, 0);
+  if (name === "all" && !allRows) { location.hash = "#home"; return; } // opened directly / after a reload
   if (name === "add") {
     $("by-name").textContent = myName;
   } else if (name === "view") {
     renderList();
+  } else if (name === "all") {
+    renderAll();
   } else {
     renderHome();
   }
@@ -231,62 +235,85 @@ function mapHref(e) {
   return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(e.location);
 }
 
-function renderList() {
-  const q = $("q").value.trim().toLowerCase();
+const fmtDate = (iso) => {
+  const d = new Date(iso);
+  return isNaN(d) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+};
+
+/** Does this record match the search text? Looks at name, phone, location and (if present) who recorded it. */
+function matches(e, q) {
+  if (!q) return true;
   const qDigits = digits(q);
-  const shown = !q ? entries : entries.filter((e) =>
+  return (
     e.name.toLowerCase().includes(q) ||
     e.location.toLowerCase().includes(q) ||
-    (qDigits && digits(e.phone).includes(qDigits)) ||
-    e.phone.toLowerCase().includes(q)
+    (e.recordedBy || "").toLowerCase().includes(q) ||
+    e.phone.toLowerCase().includes(q) ||
+    !!(qDigits && digits(e.phone).includes(qDigits))
+  );
+}
+
+/** One card in a list. opts.showBy adds "Recorded by …" (admin view). */
+function soulItem(e, opts = {}) {
+  const outside = e.kind === "outside";
+  const meta = el("p", { class: "meta" },
+    el("span", { text: fmtDate(e.capturedAt || e.savedAt) }),
+    opts.showBy ? el("span", { class: "rec", text: outside ? "Added by Admin" : `Recorded by ${e.recordedBy}` }) : null,
+    e.synced === false ? el("span", { class: "pending", text: "Not uploaded yet" }) : null
+  );
+  const info = el("div", {},
+    el("h3", { text: outside ? `${e.name} · ${e.count > 0 ? "+" : ""}${e.count}` : e.name }),
+    e.phone ? el("p", { class: "phone", text: e.phone }) : null,
+    e.location ? el("p", { class: "loc", text: e.location }) : null,
+    meta
   );
 
+  const icons = el("div", { class: "icons" });
+  if (e.phone) {
+    const call = el("a", { class: "icon-btn call", href: "tel:" + e.phone.replace(/[^\d+]/g, ""), "aria-label": `Call ${e.name}` });
+    call.append(svg(PHONE_ICON));
+    icons.append(call);
+  }
+  if (!outside && (e.location || e.mapLink)) {
+    const map = el("a", {
+      class: "icon-btn", href: mapHref(e), target: "_blank", rel: "noopener noreferrer",
+      "aria-label": `Open ${e.name}'s location in Maps`,
+    });
+    map.append(svg(PIN_ICON));
+    icons.prepend(map);
+  }
+  return el("li", { class: "item" }, info, icons);
+}
+
+function renderList() {
+  const q = $("q").value.trim().toLowerCase();
+  const shown = entries.filter((e) => matches(e, q));
   const total = entries.length;
   $("count").replaceChildren(
-    q
-      ? document.createTextNode(`Showing `)
-      : document.createTextNode("You have won "),
+    document.createTextNode(q ? "Showing " : "You have won "),
     el("b", { text: String(q ? shown.length : total) }),
     document.createTextNode(q ? ` of ${total}` : total === 1 ? " soul" : " souls")
   );
-
-  const list = $("list");
-  list.replaceChildren();
-  for (const e of shown) {
-    const tel = e.phone.replace(/[^\d+]/g, "");
-    const date = new Date(e.capturedAt);
-    const meta = el("p", { class: "meta" },
-      el("span", { text: isNaN(date) ? "" : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) }),
-      e.synced ? null : el("span", { class: "pending", text: "Not uploaded yet" })
-    );
-
-    const info = el("div", {},
-      el("h3", { text: e.name }),
-      el("p", { class: "phone", text: e.phone }),
-      e.location ? el("p", { class: "loc", text: e.location }) : null,
-      meta
-    );
-
-    const call = el("a", { class: "icon-btn call", href: "tel:" + tel, "aria-label": `Call ${e.name}` });
-    call.append(svg(PHONE_ICON));
-    const icons = el("div", { class: "icons" }, call);
-
-    if (e.location || e.mapLink) {
-      const map = el("a", {
-        class: "icon-btn", href: mapHref(e), target: "_blank", rel: "noopener noreferrer",
-        "aria-label": `Open ${e.name}'s location in Maps`,
-      });
-      map.append(svg(PIN_ICON));
-      icons.prepend(map);
-    }
-    list.append(el("li", { class: "item" }, info, icons));
-  }
-
-  const empty = $("empty");
-  empty.hidden = shown.length > 0;
-  empty.textContent = total === 0 ? "No souls recorded on this phone yet." : "No matches.";
+  $("list").replaceChildren(...shown.map((e) => soulItem(e)));
+  $("empty").hidden = shown.length > 0;
+  $("empty").textContent = total === 0 ? "No souls recorded on this phone yet." : "No matches.";
 }
 $("q").addEventListener("input", renderList);
+
+function renderAll() {
+  const q = $("q-all").value.trim().toLowerCase();
+  const shown = allRows.filter((e) => matches(e, q));
+  const sum = (rows) => rows.reduce((n, e) => n + e.count, 0);
+  $("count-all").replaceChildren(
+    document.createTextNode(q ? "Showing " : "All souls won: "),
+    el("b", { text: sum(shown).toLocaleString() }),
+    document.createTextNode(q ? ` of ${sum(allRows).toLocaleString()}` : "")
+  );
+  $("list-all").replaceChildren(...shown.map((e) => soulItem(e, { showBy: true })));
+  $("empty-all").hidden = shown.length > 0;
+  $("empty-all").textContent = allRows.length === 0 ? "Nothing recorded yet." : "No matches.";
+}
+$("q-all").addEventListener("input", renderAll);
 
 /* ------------------------------------------------------------------ *
  * Sync with Firebase
@@ -362,21 +389,23 @@ $("total").addEventListener("click", () => {
     showAdminTools();
   }
 });
-function showAdminTools() { $("export").hidden = false; $("outside").hidden = false; }
+function showAdminTools() { for (const id of ["all-btn", "outside", "export"]) $(id).hidden = false; }
 if (store.get(K_ADMIN, false)) showAdminTools();
 
-let adminMode = "export"; // "export" | "outside"
+let adminMode = "export"; // "export" | "outside" | "all"
 let outsideId = null;     // one id per submission so a retry can't add the amount twice
 
 function openAdmin(mode) {
   adminMode = mode;
   const outside = mode === "outside";
-  $("a-title").textContent = outside ? "Add Outside Souls" : "Export all data";
+  $("a-title").textContent = outside ? "Add Outside Souls" : mode === "all" ? "View All Souls Won" : "Export all data";
   $("a-sub").textContent = outside
     ? "Enter how many souls were won outside the app. It is added to the total for everyone. Use a negative number to correct a mistake."
-    : "Sign in with the admin account to download every soul won as a CSV file.";
+    : mode === "all"
+      ? "Sign in with the admin account to see everyone's souls won. Nothing from this list is kept on this phone."
+      : "Sign in with the admin account to download every soul won as a CSV file.";
   $("a-outside").hidden = !outside;
-  $("a-go").textContent = outside ? "Add to total" : "Export";
+  $("a-go").textContent = goLabel(mode);
   $("e-a").textContent = "";
   $("e-amt").textContent = "";
   $("a-amount").removeAttribute("aria-invalid");
@@ -386,6 +415,9 @@ function openAdmin(mode) {
 }
 $("export").addEventListener("click", () => openAdmin("export"));
 $("outside").addEventListener("click", () => openAdmin("outside"));
+$("all-btn").addEventListener("click", () => openAdmin("all"));
+const goLabel = (mode) => ({ outside: "Add to total", all: "View", export: "Export" })[mode];
+const busyLabel = (mode) => ({ outside: "Adding…", all: "Loading…", export: "Exporting…" })[mode];
 $("a-cancel").addEventListener("click", () => { $("admin").hidden = true; $("a-pass").value = ""; });
 
 $("a-form").addEventListener("submit", async (e) => {
@@ -406,7 +438,7 @@ $("a-form").addEventListener("submit", async (e) => {
 
   const go = $("a-go");
   go.disabled = true;
-  go.textContent = outside ? "Adding…" : "Exporting…";
+  go.textContent = busyLabel(adminMode);
   $("e-a").textContent = "";
   try {
     if (outside) {
@@ -414,6 +446,14 @@ $("a-form").addEventListener("submit", async (e) => {
       $("a-amount").value = "";
       $("a-note").value = "";
       toast(`${amount > 0 ? "Added" : "Removed"} ${Math.abs(amount).toLocaleString()} ${amount > 0 ? "to" : "from"} the total`);
+    } else if (adminMode === "all") {
+      const rows = await fetchAllSouls(email, pass);
+      allRows = rows.reverse(); // newest first
+      $("q-all").value = "";
+      $("admin").hidden = true;
+      $("a-pass").value = "";
+      location.hash = "#all";
+      return;
     } else {
       const rows = await fetchAllSouls(email, pass);
       downloadCsv(rows);
@@ -432,7 +472,7 @@ $("a-form").addEventListener("submit", async (e) => {
     console.warn(err);
   } finally {
     go.disabled = false;
-    go.textContent = outside ? "Add to total" : "Export";
+    go.textContent = goLabel(adminMode);
   }
 });
 

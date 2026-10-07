@@ -11,11 +11,15 @@ plain HTML/CSS/JS served as static files, with **Firebase Firestore** as the dat
 - **Offline-safe:** every entry is saved on the phone first, then uploaded. If there's no signal it
   is uploaded automatically later ("n waiting to upload" is shown). Retrying never double-counts.
 - **Hidden admin tools:** tap the big total **10 times** (taps must be within 2.5 s of each other).
-  Two buttons appear (and stay on that phone):
+  Three buttons appear (and stay on that phone):
+  - **View All Souls Won** — everyone's souls (not just this phone's), newest first, with "Recorded by".
+    Search matches the soul's name, phone, location **and the name of the person who recorded it**; the
+    "Showing X of Y" line gives that person's total. Outside additions appear too (no call/map buttons).
+    The data is held in memory only (nothing is saved on the phone) and is gone after a reload or leaving the app.
   - **Add Outside Souls** — enter a number of souls won outside the app (plus an optional note).
     It is added to the total everyone sees. Use a negative number to correct a mistake.
   - **Export CSV** — downloads every soul and every outside addition.
-  Both ask for the admin email/password each time.
+  All three ask for the admin email/password each time.
 
 ## Configuration values
 

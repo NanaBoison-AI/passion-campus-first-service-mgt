@@ -79,14 +79,14 @@ export function fetchAllSouls(email, password) {
       ...souls.docs.map((d) => {
         const x = d.data();
         return {
-          id: d.id, count: 1, name: x.name, phone: x.phone, location: x.location, mapLink: x.mapLink,
+          id: d.id, kind: "soul", count: 1, name: x.name, phone: x.phone, location: x.location, mapLink: x.mapLink,
           recordedBy: x.recordedBy, capturedAt: x.capturedAt, savedAt: iso(x.createdAt),
         };
       }),
       ...outside.docs.map((d) => {
         const x = d.data();
         return {
-          id: d.id, count: x.count, name: "Outside the app", phone: "", location: x.note || "", mapLink: "",
+          id: d.id, kind: "outside", count: x.count, name: "Outside the app", phone: "", location: x.note || "", mapLink: "",
           recordedBy: "Admin", capturedAt: "", savedAt: iso(x.createdAt),
         };
       }),
